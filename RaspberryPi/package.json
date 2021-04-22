@@ -1,0 +1,6 @@
+{
+    "name": "nuviotclientexample",
+    "dependencies": {
+        "http": "0.0.1-security"
+    }
+}
