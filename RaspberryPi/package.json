@@ -1,6 +1,7 @@
 {
     "name": "nuviotclientexample",
     "dependencies": {
-        "http": "0.0.1-security"
+        "http": "0.0.1-security",
+        "serialport": "^9.0.7"
     }
 }
