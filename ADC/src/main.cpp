@@ -1,13 +1,11 @@
 #include <Arduino.h>
 
-#define GPIO_BRD_V2
+#define PRD_BRD_V2
 
-#include <Objects.h>
+#include <NuvIoT.h>
 
-#define VERSION "1.0.0"
-#define FW_SKU "ADC Example"
-#define CONSOLE_BAUD_RATE 115200
-
+#define FIRMWARE_VERSION "1.0.0"
+#define EXAMPLE_SKU "ADC Example"
 
 void setup() {
   ioConfig.ADC4Config = ADC_CONFIG_ADC;
@@ -15,25 +13,24 @@ void setup() {
   ioConfig.ADC4Label = "Analog to Digital Converter 1";
   ioConfig.ADC4Scaler = 1.0;
 
-  consoleSerial.begin(CONSOLE_BAUD_RATE, SERIAL_8N1);
-  configPins.init(BOARD_CONFIG);
-
-  console.setVerboseLogging(true);
-  console.enableBTOut(false);
+  configureI2C();
+  configureConsole();
+  
+  welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
+  
+  initPins();
 
   configureFileSystem();
   configureI2C();
 
-  sysConfig.load();
-
-  initDisplay();
-
-  welcome(FW_SKU, VERSION);
+  adc.setBankEnabled(1, true);
+  adc.setBankEnabled(2, true);
 
   adc.setup(&ioConfig);
 }
 
 void loop() {
+  console.setVerboseLogging(true);
   adc.loop(); 
   adc.debugPrint();
   //float volts = adc.getVoltage(4);
