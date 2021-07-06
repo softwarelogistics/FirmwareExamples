@@ -1,0 +1,56 @@
+{
+	"folders": [
+		{
+			"name": "LEDManager",
+			"path": "LEDManager"
+		},
+		{
+			"name": "WiFi_MQTT_Connect",
+			"path": "c:\\Users\\kevin\\OneDrive\\Documents\\PlatformIO\\Projects\\WiFi_MQTT_Connect"
+		},
+		{
+			"name": "ADC",
+			"path": "ADC"
+		},
+		{
+			"name": "GPIO_Inputs",
+			"path": "GPIO_Inputs"
+		},
+		{
+			"name": "GPIO_DHT22",
+			"path": "GPIO_DHT22"
+		},
+		{
+			"name": "RelayManager",
+			"path": "RelayManager"
+		},
+		{
+			"name": "PoolManager",
+			"path": "..\\NuvIoTFirmware\\Examples\\PoolManager"
+		},
+		{
+			"name": "BLE",
+			"path": "BLE"
+		},
+		{
+			"name": "WiFiConnectivity",
+			"path": "WiFiConnectivity"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.tcc": "cpp",
+			"fstream": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp",
+			"array": "cpp",
+			"deque": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"vector": "cpp",
+			"initializer_list": "cpp"
+		}
+	}
+}
