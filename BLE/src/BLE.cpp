@@ -1,4 +1,4 @@
-#include "BLE.h"
+  #include "BLE.h"
 #include <NuvIotState.h>
 
 // List of BLE Services:
@@ -10,18 +10,19 @@
 #define CHAR_UUID_STATE "d804b639-6ce7-5e81-9f8a-ce0f699085eb"
 /* 
  * Stete characteristic will encompass 
- * Read/Write and Will Notify
+ * Read/Wr  ite and Will Notify
  *
  * xxxx => F/W SKU
  * xxx.xxx.xxx, F/W Version =>
+ * xxxx => H/W SKU
  * xxx.xxx.xxx, H/W Version =>
  
  * (1/0) <= 1 to reboot
  * (1/0) <= => Commmissioned
  * (1/0) => Internet Connectivity
  * (1/0) => Server Connectivity
- * xxx => OTA State
- * xxx => OTA Param
+ * xxx <= => OTA State
+ * xxx <= => OTA Param
  */
 
 #define CHAR_UUID_SYS_CONFIG "d804b639-6ce7-5e82-9f8a-ce0f699085eb"
@@ -32,8 +33,13 @@
   * xxxxx, B64 Device Key (128 characters) =>
   * (0/1) Cell Enable <= =>
   * (0/1) WiFi Enable <= =>
-  * xxxxxx WiFi SSID <= =>
+  * 1 Perform Station Scan <=
+  * xxxxxx WiFi SSID <= =>  
   * xxxxxx WiFi Password =>
+  * xxxxxx Server Host Name <= =>
+  * (0,1) Anonymous <= =>
+  * xxxxxx Server User Id <= =>
+  * xxxxxx Server Password <=
   * xxxx Ping Rate (sec)
   * xxxx Send Rate (sec)
   * (0/1) GPS Enable
@@ -95,9 +101,7 @@
 #define CHAR_UUID_CONSOLE "d804b639-6ce7-5e88-9f88-ce0f699085eb"
 /* RELAY Config
    * 
-   * 16 slots
-   * (1,0) <= => Relay State
-   *
+   * <= => Relay State
    */
 
 #define FULL_PACKET 512
@@ -265,6 +269,24 @@ void BLE::handleWriteCharacteristic(BLECharacteristic *characteristic)
 
   if (0 == strcmp(uuid, CHAR_UUID_STATE))
   {
+    int idx = 0;
+    char* value = null;
+    char* strSplit = characteristic->getValue().c_str();
+     while ((value = strtok_r(strSplit, " ", &strSplit))) {
+       if(strlen(value) > 0){
+        switch(idx){
+          case 4: if(value[0] == '1'){
+            hal->reboot;
+          }
+          case 5: pSysConfig->Commissioned = value[0] == '1'; break;
+        }
+       }
+      idx++; 
+     }
+
+      // strArr[i++] = token;
+ 
+
     // pSysConfig->Commissioned = characteristic->getData()[0] == '1';
   }
 
