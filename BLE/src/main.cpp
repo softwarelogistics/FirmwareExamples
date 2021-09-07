@@ -6,9 +6,8 @@
 #include <BLE2902.h>
 #include <WiFi.h>
 
-#include <NuvIoTMin.h>
+#include <NuvIoT.h>
 
-#include "BLE.h"
 
 #define RELAY_BRD_V1
 
@@ -60,53 +59,68 @@ String getWiFiStatus(int status)
 
 BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager);
 
-//HardwareSerial ble(0);
+bool running = true;
 
-// similar to what we want MQTT and WiFi
-// https://github.com/1technophile/OpenMQTTGateway/issues/563
+void cmdCallback(String cmd){
+    console.println("Receive CMD: " + cmd);
 
-void setup() {
+    if (cmd == "exit")
+    {
+        running = false;
+        wifiMQTT.disconnect();
+        BT.stop();
+    }
+    else if (cmd == "run")
+    {
+        running = true;
+    }
+}
 
-  //console.println("START " + String(ESP.getFreeHeap()));
-  delay(1000);
+void setup()
+{
+    delay(1000);
 
-  configureFileSystem();
-  configureI2C();
-  //configureConsole();
+    configureFileSystem();
+    configureI2C();
 
-  //console.println("START 1 " + String(ESP.getFreeHeap()));
+    ioConfig.load();
+    sysConfig.load();
 
-  ioConfig.load();
-  sysConfig.load();
-  
-  //console.println(sysConfig.DeviceId);
+    state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
 
-  //state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
+    consoleSerial.begin(115200, SERIAL_8N1);
+    console.println("");
+    console.println("RESTARTING");
 
-  //console.println("START 4 " + String(ESP.getFreeHeap()));
+    BT.begin("NuvIoT - BLE Sample");
 
-  consoleSerial.begin(115200, SERIAL_8N1);
-  console.println("");
-  console.println("RESTARTING");
+    wifiMgr.setup();
+    wifiMgr.connect(true);
 
-  BT.begin("NuvIoT - BLE Sample");
-
-  wifiMgr.setup();
-  wifiMgr.connect(true); 
+    console.registerCallback(cmdCallback);
 }
 
 int idx = 0;
 
-void loop() {
+void loop()
+{
     delay(500);
-    //commonLoop();
-    console.println("WIFI START " + getWiFiStatus(WiFi.status()));
-    console.println("FREE RAM " + String(ESP.getFreeHeap()));  
-    if(WiFi.status() == WL_CONNECTED) {
-      //wifiMQTT.connect();
-      //client.WifiConnect(true);
-    }
+    
+    if (running)
+    {
+        console.loop();
+        BT.refreshCharacteristics();
 
-    delay(500);
-    BT.update(); 
+        wifiMQTT.loop();
+        console.println("wifi=" + wifiMgr.getWiFiStatus() + ";");
+        console.println(wifiMQTT.isConnected() ? "mqtt=connected;" : "mqtt=disconnected;");
+        console.println("---------------------------------");
+
+        delay(500);
+        BT.update();
+    }
+    else
+    {
+        console.println("Disconnected");
+    }
 }

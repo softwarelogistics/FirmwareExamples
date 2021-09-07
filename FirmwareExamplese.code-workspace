@@ -35,6 +35,27 @@
 		{
 			"name": "WiFiConnectivity",
 			"path": "WiFiConnectivity"
+		},
+		{
+			"path": "ConsoleExample"
+		},
+		{
+			"name": "CellularConnectivity",
+			"path": "CellularConnectivity"
+		},
+		{
+			"name": "GPSDemo",
+			"path": "GPSDemo"
+		},
+		{
+			"name": "DFU",
+			"path": "DFU"
+		},
+		{
+			"path": "ConfigSettings"
+		},
+		{
+			"path": "IOConfig"
 		}
 	],
 	"settings": {
@@ -50,7 +71,8 @@
 			"unordered_map": "cpp",
 			"unordered_set": "cpp",
 			"vector": "cpp",
-			"initializer_list": "cpp"
+			"initializer_list": "cpp",
+			"algorithm": "cpp"
 		}
 	}
 }
