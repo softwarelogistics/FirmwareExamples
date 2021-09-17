@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
 
-#define EXAMPLE_SKU "DFU_DEMO"
-#define FIRMWARE_VERSION "1.0.0"
+#define EXAMPLE_SKU "CIM001"
+#define FIRMWARE_VERSION "0.4.6"
 
 bool running = true;
 
@@ -34,9 +34,14 @@ void setup()
   state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "dfu001", 010);
 
   sysConfig.WiFiEnabled = false;
-  sysConfig.CellEnabled = false;
-  sysConfig.GPSEnabled = true;
-  sysConfig.DeviceId = "GPSDEMO";
+  sysConfig.CellEnabled = true;
+  sysConfig.Commissioned = true;
+  sysConfig.SrvrHostName = "pt1.seawolf.iothost.net";
+  sysConfig.SrvrUID = "seawolf";
+  sysConfig.SrvrPWD = "4NuvIoT!";
+  sysConfig.DeviceId = "floyd";
+  sysConfig.PingRate = 5;
+  sysConfig.SendUpdateRate = 2500;
 
   console.setVerboseLogging(false);
   connect();
@@ -45,12 +50,12 @@ void setup()
 int nextPrint = 0;
 int idx = 0;
 
-void loop()
-{
+void loop(){
   console.loop();  
-
-  if (nextPrint < millis() && running)
-  {
-    
+  console.setVerboseLogging(false);
+  if (nextPrint < millis() && running){
+    nextPrint = millis() + sysConfig.SendUpdateRate;
+    commonLoop();  
+    mqttPublish("test/" + sysConfig.DeviceId, "{'hi':'bob'}");
   }
 }

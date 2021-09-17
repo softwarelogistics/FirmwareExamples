@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
 
-#define EXAMPLE_SKU "IO_CONFIG"
+#define EXAMPLE_SKU "BLE_CONFIG"
 #define FIRMWARE_VERSION "1.0.1"
 
 byte buffer[8];
@@ -49,23 +49,19 @@ void setup()
 }
 
 int nextPrint = 0;
-int idx = 0;
 
 void loop()
 {
-    // console.loop() should be called to look for any input coming in
-    // via a serial port.
     console.loop();
-    BT.update();    
-
+    
     if (nextPrint < millis() && running)
     {
-        nextPrint = millis() + 1000;
-        console.println("hi " + String(idx++));
-        console.newline();
-    }
+        BT.update(); 
 
-    // If your app gets into a state where it can't recover and you don't want to do a restart,
-    // call this method continually to write output to the console.
-    // console.repeatFatalError("unrocoverable error.");
+        nextPrint = millis() + 1000;
+
+        if(!BT.getIsConnected()) {
+            console.println("ble:disconnected;");
+        }
+    }
 }
