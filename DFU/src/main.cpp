@@ -4,7 +4,7 @@
 #include <NuvIoT.h>
 
 #define EXAMPLE_SKU "CIM001"
-#define FIRMWARE_VERSION "0.4.6"
+#define FIRMWARE_VERSION "0.3.0"
 
 bool running = true;
 
@@ -51,11 +51,13 @@ int nextPrint = 0;
 int idx = 0;
 
 void loop(){
-  console.loop();  
+  commonLoop();  
+
   console.setVerboseLogging(false);
+  
   if (nextPrint < millis() && running){
-    nextPrint = millis() + sysConfig.SendUpdateRate;
-    commonLoop();  
-    mqttPublish("test/" + sysConfig.DeviceId, "{'hi':'bob'}");
+    nextPrint = millis() + sysConfig.SendUpdateRate;    
+    //mqttPublish("test/" + sysConfig.DeviceId, "{'hi':'bob'}");
+    mqttPublish("/test/" + sysConfig.DeviceId);
   }
 }
