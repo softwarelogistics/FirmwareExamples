@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
 
-#define EXAMPLE_SKU "CIM001"
+#define EXAMPLE_SKU "WEB001"
 #define FIRMWARE_VERSION "0.3.0"
 
 bool running = true;
@@ -25,7 +25,7 @@ void setup()
   initPins();
 
   configureConsole();
-  
+
   console.registerCallback(cmdCallback);
 
   configureModem();
@@ -36,28 +36,26 @@ void setup()
   sysConfig.WiFiEnabled = false;
   sysConfig.CellEnabled = true;
   sysConfig.Commissioned = true;
-  sysConfig.SrvrType = "mqtt";
+  sysConfig.SrvrType = "http";
   sysConfig.SrvrHostName = "pt1.seawolf.iothost.net";
-  sysConfig.SrvrUID = "seawolf";
-  sysConfig.SrvrPWD = "4NuvIoT!";
-  sysConfig.DeviceId = "floyd";
   sysConfig.PingRate = 5;
   sysConfig.SendUpdateRate = 2500;
+  sysConfig.DeviceId = "floyd";
 
-  console.setVerboseLogging(false);
   connect();
+  console.setVerboseLogging(false);
 }
 
-int nextPrint = 0;
-int idx = 0;
+long nextPrint = 0;
 
-void loop(){
-  commonLoop();  
-
-  console.setVerboseLogging(false);
-  
-  if (nextPrint < millis() && running){
-    nextPrint = millis() + sysConfig.SendUpdateRate;    
-    mqttPublish("/test/" + sysConfig.DeviceId);
+void loop()
+{
+  commonLoop();
+  if (nextPrint < millis() && running)
+  {
+    nextPrint = millis() + sysConfig.SendUpdateRate;
+    //httpGet("http://" + sysConfig.SrvrHostName + "/sensor/" + sysConfig.DeviceId + "/bilge/data");
+    httpPost("http://" + sysConfig.SrvrHostName + "/sensor/" + sysConfig.DeviceId + "/bilge/data", "1,1,0,0,1,1,0");
+    console.newline();
   }
 }

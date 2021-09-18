@@ -56,6 +56,10 @@
 		},
 		{
 			"path": "IOConfig"
+		},
+		{
+			"name": "WebRequest",
+			"path": "WebRequest"
 		}
 	],
 	"settings": {
