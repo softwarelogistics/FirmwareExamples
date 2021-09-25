@@ -88,7 +88,7 @@ void setup()
 
     state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
 
-    consoleSerial.begin(115200, SERIAL_8N1);
+    consoleSerial.begin(115200, SERIAL_8N1);    
     console.println("");
     console.println("RESTARTING");
 

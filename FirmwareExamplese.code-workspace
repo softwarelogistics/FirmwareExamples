@@ -5,10 +5,6 @@
 			"path": "LEDManager"
 		},
 		{
-			"name": "WiFi_MQTT_Connect",
-			"path": "c:\\Users\\kevin\\OneDrive\\Documents\\PlatformIO\\Projects\\WiFi_MQTT_Connect"
-		},
-		{
 			"name": "ADC",
 			"path": "ADC"
 		},
@@ -21,10 +17,6 @@
 			"path": "GPIO_DHT22"
 		},
 		{
-			"name": "RelayManager",
-			"path": "RelayManager"
-		},
-		{
 			"name": "PoolManager",
 			"path": "..\\NuvIoTFirmware\\Examples\\PoolManager"
 		},
@@ -33,33 +25,51 @@
 			"path": "BLE"
 		},
 		{
-			"name": "WiFiConnectivity",
-			"path": "WiFiConnectivity"
-		},
-		{
-			"path": "ConsoleExample"
-		},
-		{
 			"name": "CellularConnectivity",
 			"path": "CellularConnectivity"
 		},
 		{
-			"name": "GPSDemo",
-			"path": "GPSDemo"
+			"name": "ConsoleExample",
+			"path": "ConsoleExample"
 		},
 		{
 			"name": "DFU",
 			"path": "DFU"
 		},
 		{
+			"name": "ConfigSettings",
 			"path": "ConfigSettings"
 		},
 		{
+			"name": "IOConfig",
 			"path": "IOConfig"
+		},
+		{
+			"name": "GPSDemo",
+			"path": "GPSDemo"
+		},
+		{
+			"name": "ModemPower",
+			"path": "ModemPower"
+		},
+		{
+			"name": "RelayManager",
+			"path": "RelayManager"
 		},
 		{
 			"name": "WebRequest",
 			"path": "WebRequest"
+		},
+		{
+			"name": "WiFiConnectivity",
+			"path": "WiFiConnectivity"
+		},
+		{
+			"name": "WiFi_MQTT_Connect",
+			"path": "c:\\Users\\kevin\\OneDrive\\Documents\\PlatformIO\\Projects\\WiFi_MQTT_Connect"
+		},
+		{
+			"path": "HardwareWatchdog"
 		}
 	],
 	"settings": {

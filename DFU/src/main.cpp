@@ -23,7 +23,7 @@ void cmdCallback(String cmd)
 void setup()
 {
   initPins();
-
+  configureFileSystem();
   configureConsole();
   
   console.registerCallback(cmdCallback);
@@ -38,10 +38,11 @@ void setup()
   sysConfig.Commissioned = true;
   sysConfig.SrvrType = "mqtt";
   sysConfig.SrvrHostName = "pt1.seawolf.iothost.net";
+  //sysConfig.Anonymous = true;
   sysConfig.SrvrUID = "seawolf";
   sysConfig.SrvrPWD = "4NuvIoT!";
-  sysConfig.DeviceId = "floyd";
-  sysConfig.PingRate = 5;
+  sysConfig.DeviceId = "sim001";
+  sysConfig.PingRate = 60;
   sysConfig.SendUpdateRate = 2500;
 
   console.setVerboseLogging(false);
@@ -58,6 +59,6 @@ void loop(){
   
   if (nextPrint < millis() && running){
     nextPrint = millis() + sysConfig.SendUpdateRate;    
-    mqttPublish("/test/" + sysConfig.DeviceId);
+    //mqttPublish("test/" + sysConfig.DeviceId);
   }
 }
