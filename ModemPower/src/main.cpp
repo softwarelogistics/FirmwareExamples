@@ -28,15 +28,23 @@ void cmdCallback(String cmd)
 
     if (cmd == "on")
     {
-        modemPowerOn();
+        modem.hardwarePowerOn();
         digitalWrite(18, LOW);
     }
     else if (cmd == "off")
     {
-        modemPowerOff();
+        modem.hardwarePowerOff();
         digitalWrite(18, HIGH);
     }
-    else 
+    else if (cmd == "reset")
+    {
+        modem.hardwareReset();
+    }
+    else if (cmd == "soff")
+    {
+        modem.softwarePowerOff();
+    }
+    else
     {
         console.println("Unknown commnd: [" + cmd + "]");
     }
@@ -46,9 +54,9 @@ void setup()
 {
     initPins();
     configureConsole();
-    
+
     configureModem();
-    
+
     console.registerCallback(cmdCallback);
     welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
     state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "mdmpwr001", 010);
