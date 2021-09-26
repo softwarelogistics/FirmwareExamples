@@ -66,7 +66,7 @@ int idx = 0;
 
 void loop()
 {
-    console.loop();
+    console.loop();    
     modem.isModemOnline();
     delay(500);
 }
