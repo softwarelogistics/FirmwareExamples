@@ -20,7 +20,7 @@ void setup() {
   sysConfig.WiFiSSID = "[SSID]";
   sysConfig.WiFiPWD = "[PWD]";
 
-  state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "pcl001", 010);
+  state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0.0", "pcl001", 010);
 }
 
 void loop() {

@@ -6,6 +6,10 @@
 #define EXAMPLE_SKU "GPRS_DEMO"
 #define FIRMWARE_VERSION "1.0.0"
 
+#define SRVR_HOST_NAME "pt1.seawolf.iothost.net";
+#define SRVR_UID "seawolf";
+#define SRVR_PWD "4NuvIoT!";
+
 bool running = true;
 
 void cmdCallback(String cmd)
