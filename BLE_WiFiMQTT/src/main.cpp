@@ -57,7 +57,7 @@ String getWiFiStatus(int status)
     return statusMsg;
 }
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager);
+BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
 
 bool running = true;
 

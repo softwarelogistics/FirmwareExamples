@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
 
-#define EXAMPLE_SKU "BLE_CONFIG"
+#define EXAMPLE_SKU "IO_VALUES"
 #define FIRMWARE_VERSION "1.0.1"
 
 byte buffer[8];
@@ -45,7 +45,7 @@ void setup()
 
     welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
 
-    state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "cfg001", 010);
+    state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "io001", 010);
 }
 
 int nextPrint = 0;

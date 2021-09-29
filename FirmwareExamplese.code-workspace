@@ -73,6 +73,9 @@
 		},
 		{
 			"path": "BLE_WiFiMQTT"
+		},
+		{
+			"path": "IOValues"
 		}
 	],
 	"settings": {

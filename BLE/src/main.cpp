@@ -7,7 +7,7 @@
 #define HARDWARE_REVISION "*"
 #define EXAMPLE_SKU "BLE - GATT Example"
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager);
+BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
 
 bool running = true;
 
