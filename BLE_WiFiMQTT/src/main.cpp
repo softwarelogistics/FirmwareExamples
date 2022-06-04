@@ -92,7 +92,7 @@ void setup()
     console.println("");
     console.println("RESTARTING");
 
-    BT.begin("NuvIoT - BLE Sample");
+    BT.begin("NuvIoT - BLE Sample", "MISC");
 
     wifiMgr.setup();
     wifiMgr.connect(true);

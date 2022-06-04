@@ -76,6 +76,14 @@
 		},
 		{
 			"path": "IOValues"
+		},
+		{
+			"name": "ESPResetHelper",
+			"path": "ESPResetHelper"
+		},
+		{
+			"name": "NuvIoT-SensorBoard",
+			"path": "NuvIoT-SensorBoard"
 		}
 	],
 	"settings": {

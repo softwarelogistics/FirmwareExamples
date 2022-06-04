@@ -17,10 +17,10 @@ void setup() {
   sysConfig.DeviceId = "?";
   sysConfig.Commissioned = true;
   sysConfig.WiFiEnabled = true;
-  sysConfig.WiFiSSID = "[SSID]";
-  sysConfig.WiFiPWD = "[PWD]";
+  sysConfig.WiFiSSID = "NuvIoT";
+  sysConfig.WiFiPWD = "TheWolfBytes";
 
-  state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "pcl001", 010);
+  state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "pcl001", "DONTCARE", 010);
 }
 
 void loop() {

@@ -25,6 +25,9 @@ void setup()
 {
   initPins();
 
+  ledManager.setup(&ioConfig);
+  ledManager.beep(20);
+
   configureConsole();
   console.registerCallback(cmdCallback);
 
@@ -46,6 +49,7 @@ void loop()
   // console.loop() should be called to look for any input coming in
   // via a serial port.
   console.loop();
+  //ledManager.loop();
 
   if (nextPrint < millis() && running)
   {
