@@ -17,10 +17,6 @@
 			"path": "GPIO_DHT22"
 		},
 		{
-			"name": "PoolManager",
-			"path": "..\\NuvIoTFirmware\\Examples\\PoolManager"
-		},
-		{
 			"name": "BLE",
 			"path": "BLE"
 		},
@@ -84,6 +80,9 @@
 		{
 			"name": "NuvIoT-SensorBoard",
 			"path": "NuvIoT-SensorBoard"
+		},
+		{
+			"path": "PoolManager"
 		}
 	],
 	"settings": {
@@ -100,7 +99,16 @@
 			"unordered_set": "cpp",
 			"vector": "cpp",
 			"initializer_list": "cpp",
-			"algorithm": "cpp"
+			"algorithm": "cpp",
+			"chrono": "cpp",
+			"format": "cpp",
+			"forward_list": "cpp",
+			"list": "cpp",
+			"xhash": "cpp",
+			"xstring": "cpp",
+			"xtree": "cpp",
+			"xutility": "cpp",
+			"string_view": "cpp"
 		}
 	}
 }

@@ -16,7 +16,7 @@ void setup() {
 
   welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
 
-  state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "rly001", 010);  
+  state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "1.0", "rly001", 01);
 }
 
 long nextTransition = 0;

@@ -17,8 +17,8 @@ void setup() {
   sysConfig.DeviceId = "?";
   sysConfig.Commissioned = true;
   sysConfig.WiFiEnabled = true;
-  sysConfig.WiFiSSID = "NuvIoT";
-  sysConfig.WiFiPWD = "TheWolfBytes";
+  sysConfig.WiFiSSID = "[YOURSSID]";
+  sysConfig.WiFiPWD = "[YOURPWD]";
 
   state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "pcl001", "DONTCARE", 010);
 }

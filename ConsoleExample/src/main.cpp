@@ -1,4 +1,4 @@
-#define PROD_BRD_V1
+#define RELAY_BRD_V1
 
 #include <Arduino.h>
 #include <NuvIoT.h>
