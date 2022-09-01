@@ -1,10 +1,12 @@
-#define TEMP_SNSR_BOARD_V3
+#define RELAY_BRD_V1
 
 #include <Arduino.h>
 #include <NuvIoT.h>
 
+#include <Wire.h>
+
 #define TEMP_SNSR_SKU "Temperature Sensor"
-#define FIRMWARE_VERSION "0.5.0"
+#define FIRMWARE_VERSION "0.5.1"
 #define HARDWARE_REVISION "3.0"
 
 byte buffer[8];
@@ -27,40 +29,47 @@ void cmdCallback(String cmd){
     }
 }
 
-void setup()
-{
+void setup(){
   delay(1000);
 
-  configureFileSystem();
+  console.setVerboseLogging(true);
+  configureConsole();
 
+
+  //sysConfig.SendUpdateRate = 1000;
+  state.init(TEMP_SNSR_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
+  configureFileSystem();
+  
   ioConfig.load();
   sysConfig.load();
   sysConfig.WiFiEnabled = true;
-  sysConfig.SendUpdateRate = 1000;
-  state.init(TEMP_SNSR_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
+
   initPins();
 
-  //ledManager.setup(&ioConfig);
+  configureI2C();
+  
+  adc.setBankEnabled(1, true);
+  adc.setBankEnabled(2, true);
 
-  configureConsole();
+  adc.setup(&ioConfig);
+  
   console.registerCallback(handleConsoleCommand);
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
-  String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Temp Sensor" : sysConfig.DeviceId);
+  String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Relay Board" : sysConfig.DeviceId);
 
   BT.begin(btName.c_str(), "TMPS-001");
 
   wifiMgr.setup();  
 }
 
-int nextPrint = 0;
-int idx = 0;
+void loop(){  
+  adc.loop(); 
 
-void loop()
-{
-  console.loop();
-  ledManager.loop();  
+  console.setVerboseLogging(true);
+  adc.debugPrint();
+  console.println("--");
   wifiMgr.loop();
   BT.update();
-  delay(500);
+  delay(1000);
 }

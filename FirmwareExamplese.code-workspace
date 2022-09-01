@@ -83,6 +83,10 @@
 		},
 		{
 			"path": "PoolManager"
+		},
+		{
+			"name": "SLRelayBoard",
+			"path": "SLRelayBoard"
 		}
 	],
 	"settings": {
