@@ -196,18 +196,36 @@ void loop()
 
   if (hasProbe1)
   {
+    probe1->requestTemperatures();
+    delay(250);
     ioValues.setValue(2, probe1->getTempFByIndex(0));
+    delay(250);
   }
 
   if (hasProbe2)
   {
+    probe2->requestTemperatures();
+    delay(250);
     ioValues.setValue(3, probe2->getTempFByIndex(0));
+    delay(250);
   }
 
   if(wifiMgr.isConnected() && millis() > nextSend)
   {
-    String path = "/sensor/temperature/" + sysConfig.DeviceId;
-    String json = "{'temperature':" + String(ioValues.getValue(0) + ",'humidity':" + String(ioValues.getValue(1)) + "}");
+    String path = "/sensor/" + sysConfig.DeviceId + "/temperature";
+    String json = "";
+    if(hasDHT22)
+      json = "{'temperature':" + String(ioValues.getValue(0) + ",'humidity':" + String(ioValues.getValue(1)) + "}");
+    else if(hasProbe1 && hasProbe2) {
+      json = "{'temperature':" + String(ioValues.getValue(2) + ",'temperature2':" + String(ioValues.getValue(3)) + "}");
+    }
+    else if(hasProbe1) {
+      json = "{'temperature':" + String(ioValues.getValue(2) + "}");
+
+    }
+    else if(hasProbe2) {
+      json = "{'temperature':" + String(ioValues.getValue(3) + "}");
+    }
     wifiMgr.post(sysConfig.SrvrHostName, 8081, path, json );
     nextSend = millis() + sysConfig.SendUpdateRate;
   }
