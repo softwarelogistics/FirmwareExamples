@@ -12,21 +12,16 @@ void setup() {
   ioConfig.ADC1Config = ADC_CONFIG_CT;
   ioConfig.ADC1Name = "ct1";
   ioConfig.ADC1Label = "Current Tranformer 1";
-  ioConfig.ADC1Scaler = 100.0;
+  ioConfig.ADC1Scaler = 33.0;
 
-  consoleSerial.begin(CONSOLE_BAUD_RATE, SERIAL_8N1);
+  configureConsole();
   configPins.init(BOARD_CONFIG);
-
-  console.setVerboseLogging(true);
-  console.enableBTOut(false);
 
   configureFileSystem();
   configureI2C();
 
-  ioConfig.load();
-  sysConfig.load();
-
-  initDisplay();
+  //loadConfigurations();
+  initDisplay(FW_SKU, VERSION);
 
   welcome(FW_SKU, VERSION);
 
