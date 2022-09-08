@@ -161,7 +161,7 @@ void setup()
 
   BT.begin(btName.c_str(), "TMPS-001");
 
-  wifiMgr.setup();
+  //wifiMgr.setup();
 
   determineSensorConfiguration();
 }
@@ -180,11 +180,13 @@ void loop()
   {
     //  adcCountsBatt += analogRead(27);
     // adcCountsTemperature += analogRead(TEMP_SENSE_PIN);
-    delay(10);
+    
   }
 
   console.loop();
   ledManager.loop();
-  wifiMgr.loop();
+ // wifiMgr.loop();
   BT.update();
+
+  delay(1000);
 }

@@ -5,29 +5,14 @@
 
 #include <Wire.h>
 
-#define TEMP_SNSR_SKU "Temperature Sensor"
+#define TEMP_SNSR_SKU "Relay Board"
 #define FIRMWARE_VERSION "0.5.1"
-#define HARDWARE_REVISION "3.0"
+#define HARDWARE_REVISION "5.0"
 
 byte buffer[8];
 bool running = true;
 
 BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
-
-void cmdCallback(String cmd){
-    console.println("Receive CMD: " + cmd);
-
-    if (cmd == "exit")
-    {
-        running = false;
-        wifiMQTT.disconnect();
-        BT.stop();
-    }
-    else if (cmd == "run")
-    {
-        running = true;
-    }
-}
 
 void setup(){
   delay(1000);
@@ -35,25 +20,18 @@ void setup(){
   console.setVerboseLogging(true);
   configureConsole();
 
-
-  //sysConfig.SendUpdateRate = 1000;
   state.init(TEMP_SNSR_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
-  configureFileSystem();
-  
+  configureFileSystem();  
   ioConfig.load();
   sysConfig.load();
-  sysConfig.WiFiEnabled = true;
 
   initPins();
-
   configureI2C();
   
   adc.setBankEnabled(1, true);
   adc.setBankEnabled(2, true);
-
   adc.setup(&ioConfig);
   
-  console.registerCallback(handleConsoleCommand);
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Relay Board" : sysConfig.DeviceId);
@@ -68,7 +46,6 @@ void loop(){
 
   console.setVerboseLogging(true);
   adc.debugPrint();
-  console.println("--");
   wifiMgr.loop();
   BT.update();
   delay(1000);
