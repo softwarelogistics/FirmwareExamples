@@ -15,6 +15,9 @@ bool running = true;
 BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
 
 void setup(){
+uint8_t new_mac[8] = {0x10, 0x02, 0x03, 0x04, 0x05, 0x06};
+esp_base_mac_addr_set(new_mac);
+
   delay(1000);
 
   console.setVerboseLogging(true);
@@ -26,17 +29,22 @@ void setup(){
   sysConfig.load();
 
   initPins();
+  writeConfigPins();
   configureI2C();
   
   adc.setBankEnabled(1, true);
   adc.setBankEnabled(2, true);
   adc.setup(&ioConfig);
+
+  ledManager.setOnlineFlashRate(1);
+  ledManager.setErrFlashRate(0);
   
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Relay Board" : sysConfig.DeviceId);
+  console.println("BT DEVICE NAME: " + btName);
 
-  BT.begin(btName.c_str(), "TMPS-001");
+  BT.begin(btName.c_str(), "RELAY-005");
 
   wifiMgr.setup();  
 }
@@ -48,5 +56,6 @@ void loop(){
   adc.debugPrint();
   wifiMgr.loop();
   BT.update();
+  hal.loop();
   delay(1000);
 }

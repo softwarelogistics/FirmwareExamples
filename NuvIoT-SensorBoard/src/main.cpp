@@ -57,8 +57,6 @@ void determineSensorConfiguration()
   }
   else
   {
-    console.println("Found DHT22");
-  
     ioConfig.GPIO1Config = GPIO_CONFIG_DHT22;
     ioConfig.GPIO1Name = "Digital Temperature";
     ioConfig.GPIO1Scaler = 1;
@@ -81,6 +79,7 @@ void determineSensorConfiguration()
       float temp = probe1->getTempFByIndex(0);
       if (!isnan(temp) && temp != -196.60f)
       {
+        console.println("actual probe response " + String(temp));
         hasProbe1 = true;
       }
     }
@@ -149,11 +148,12 @@ void setup()
   sysConfig.WiFiEnabled = true;
   sysConfig.SendUpdateRate = 1000;
   state.init(TEMP_SNSR_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
+  
   initPins();
 
-  // ledManager.setup(&ioConfig);
-
   configureConsole();
+  writeConfigPins();
+
   console.registerCallback(handleConsoleCommand);
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
@@ -161,7 +161,10 @@ void setup()
 
   BT.begin(btName.c_str(), "TMPS-001");
 
-  //wifiMgr.setup();
+  wifiMgr.setup();
+  ledManager.setup(&ioConfig);
+  ledManager.setOnlineFlashRate(1);
+  ledManager.setErrFlashRate(0);
 
   determineSensorConfiguration();
 }
@@ -185,8 +188,9 @@ void loop()
 
   console.loop();
   ledManager.loop();
- // wifiMgr.loop();
+  wifiMgr.loop();
+  hal.loop();
   BT.update();
-
+  probes.loop();
   delay(1000);
 }
