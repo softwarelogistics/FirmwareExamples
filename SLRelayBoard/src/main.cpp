@@ -36,6 +36,7 @@ esp_base_mac_addr_set(new_mac);
   adc.setBankEnabled(2, true);
   adc.setup(&ioConfig);
 
+  ledManager.setup(&ioConfig);
   ledManager.setOnlineFlashRate(1);
   ledManager.setErrFlashRate(0);
   
