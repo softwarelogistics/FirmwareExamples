@@ -12,7 +12,7 @@
 byte buffer[8];
 bool running = true;
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
+BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, &ota, payload);
 
 void setup(){
 uint8_t new_mac[8] = {0x10, 0x02, 0x03, 0x04, 0x05, 0x06};

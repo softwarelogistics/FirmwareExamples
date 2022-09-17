@@ -127,7 +127,7 @@ void determineSensorConfiguration()
   }
 }
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
+BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, &ota, payload);
 
 void setup()
 {
