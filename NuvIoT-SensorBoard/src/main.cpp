@@ -180,8 +180,6 @@ void loop()
   BT.update();
   probes.loop();
 
-
-
   console.setVerboseLogging(true);
   probes.debugPrint();
   delay(1000);
