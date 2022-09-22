@@ -7,11 +7,11 @@
 #include <NuvIoT.h>
 
 #define TEMP_SNSR_SKU "RSB-01"
-#define FIRMWARE_VERSION "0.7.5"
+#define FIRMWARE_VERSION "0.8.1"
 #define HARDWARE_REVISION "3.0"
 
-#define BATT_SENSE_PIN 27
-#define TEMP_SENSE_PIN 13
+#define BATT_SENSE_PIN 34
+#define TEMP_SENSE_PIN 35
 
 #define IO1_PIN 25
 #define IO2_PIN 26
@@ -165,13 +165,17 @@ void setup()
 
 int nextPrint = 0;
 int idx = 0;
-
 long nextSend = 0;
 
-void loop()
-{
-  uint32_t adcCountsBatt = 0;
-  uint32_t adcCountsTemperature = 0;
+void loop(){
+  uint32_t adcCountsBatt = analogRead(BATT_SENSE_PIN);
+  uint32_t adcCountsTemperature = analogRead(TEMP_SENSE_PIN);
+  float vin = ((adcCountsBatt / 4096.0f) * 3.3f) * 2.0f;
+  float vtemp = ((adcCountsTemperature / 4096.0f) * 3.3f);
+
+  state.setInputVoltage(vin);
+
+  console.println("ADC " + String(vin) + ", " + String(vtemp));
 
   console.loop();
   ledManager.loop();
