@@ -10,8 +10,6 @@ bool running = true;
 double testADCValues[8];
 double testTemperatureValues[8];
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
-
 void cmdCallback(String cmd)
 {
     console.println("Receive CMD: " + cmd);

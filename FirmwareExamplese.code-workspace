@@ -87,6 +87,10 @@
 		{
 			"name": "SLRelayBoard",
 			"path": "SLRelayBoard"
+		},
+		{
+			"name": "PoolValveController",
+			"path": "PoolValveController"
 		}
 	],
 	"settings": {
