@@ -19,9 +19,11 @@ We use the VS Code Extension, PlatformIO IDE which is an open source and widely 
 
 ![PlatformIO IDE image](assets/images/PlatformIO_IDE_Extension_300.png)
 
-## Install Serial Debug Assitant
+## Install Serial Debug Assistant
 
-Another tool we have found useful the Serial Debug Assistant which can be downloaded from the Microsoft Store. Search for "serial debug assitant".
+Another tool we have found useful the Serial Debug Assistant which can be downloaded from the Microsoft Store. Search for "serial debug assistant". This is not needed for basic operations or use of the firmware but will come in handy as you work with the hardware.
+
+![Serial Debug assistant in Microsoft Store](assets/images/SerialDebug_Assistant_300.png)
 
 ## Setup
 
@@ -37,13 +39,7 @@ You will also need to set the com port and com port speed.
 
 The related platformio.ini entries for my machine are shown below:
 
-monitor_speed = 115200
-debug_speed = 115200
-
-upload_port = COM4
-monitor_port = COM4
-
-lib_extra_dirs = c:\Arduino (where i have downloaded the NuvIot libraries..)
+![Platformio.ini contents](assets/images/PlatformIO_Ini.png)
 
 ## Using the firmware
 
