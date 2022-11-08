@@ -17,6 +17,8 @@ This currently has all of our examples.
 
 We use the VS Code Extension, PlatformIO IDE which is an open source and widely used for embedded development. More information can be found at: https://docs.platformio.org/en/latest/integration/ide/vscode.html
 
+[PlatformIO IDE image](https://github.com/softwarelogistics/FirmwareExamples/assets/images/PlatformIO_IDE_Extension.png)
+
 ## Install Serial Debug Assitant
 
 Another tool we have found useful is the Serial Debug Assistant which can be downloaded from the Microsoft Store. Search for "serial debug assitant".
