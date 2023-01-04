@@ -49,7 +49,7 @@ Examples of how to use different drivers for Software Logistics Open Hardware Pl
 
 * ### NuvIot Sensor
   * A simple monitor of temperature and humidity
-  * https://github.com/softwarelogistics/FirmwareExamples/NuvIoT-SensorBoard
+  * https://github.com/softwarelogistics/FirmwareExamples/tree/main/NuvIoT-SensorBoard
 
 
 
