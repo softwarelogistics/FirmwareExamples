@@ -7,8 +7,8 @@
 #include <NuvIoT.h>
 
 #define TEMP_SNSR_SKU "RSB-01"
-#define FIRMWARE_VERSION "0.8.1"
-#define HARDWARE_REVISION "3.0"
+#define FIRMWARE_VERSION "0.9.0"
+#define HARDWARE_REVISION "4.0"
 
 #define BATT_SENSE_PIN 34
 #define TEMP_SENSE_PIN 35
@@ -181,6 +181,32 @@ void loop(){
   hal.loop();
   BT.update();
   probes.loop();
+
+  if(sysConfig.Commissioned && nextSend < millis())
+  {
+    String url = "http://" + sysConfig.SrvrHostName + ":" + sysConfig.Port + "/temperature/" + sysConfig.DeviceId;
+    console.println(url);
+    String body = "{}";
+  
+    if(hasDHT22){
+       body = "{'temperature':" + String(probes.getTemperature(0)) + ",'humidity':" + probes.getHumidity(0) + "}";
+    }
+
+    if(hasProbe1 && !hasProbe2) {
+      body = "{'temperature':" + String(probes.getTemperature(0)) + "}";
+    }
+    
+    if(hasProbe2 && !hasProbe1) {
+      body = "{'temperature':" + String(probes.getTemperature(1)) + "}";
+    }
+
+    if(hasProbe2 && hasProbe1) {
+      body = "{'temperature':" + String(probes.getTemperature(1)) + ",'temperature2':" + String(probes.getTemperature(1)) + "}";
+    }
+
+    wifiMgr.post(sysConfig.SrvrHostName,sysConfig.Port, "/sensor/" + sysConfig.DeviceId + "/temperature", body);
+    nextSend = millis() + 1500;
+  }
 
   console.setVerboseLogging(true);
   probes.debugPrint();
