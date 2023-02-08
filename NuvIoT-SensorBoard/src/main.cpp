@@ -208,6 +208,11 @@ void loop(){
     nextSend = millis() + 1500;
   }
 
+  double freeBytes = ESP.getFreeHeap() / 1024.0;
+
+  console.println("ble=allocated; // allocated for BLE: " + String(freeBytes) + "KB");
+
+
   console.setVerboseLogging(true);
   probes.debugPrint();
   delay(1000);

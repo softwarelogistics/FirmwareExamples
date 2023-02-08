@@ -1,101 +1,217 @@
+#define ESP32_Relay_X8
+
 #include <Arduino.h>
-#include "PubSubClient.h"
-#include <WiFiClient.h>
-#include <uri/UriRegex.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
-#include <EEPROM.h>
-#include <ESP8266HTTPUpdateServer.h>
+
+#include <NuvIoT.h>
+#include <WebServer.h>
+#include <StringSplitter.h>
+
+#include "EEPROM.h"
+
 #include "valve.h"
 #include "pages.h"
+
+// Programming Interface
+// Back Header
+// 1 - DTR - White
+// 2 - GND - Brown
+// 3 - N/C
+// 4 - From USB - Orange
+// 5 - To USB - Yellow
+// 6 - Red - +V5
+
+// U3
+// 2 - RTS Green
+
+//#include <uri/UriRegex.h>
+
+#define FW_SKU "PLVL001"
+#define FIRMWARE_VERSION "0.6.0"
+#define HARDWARE_REVISION "COT-01"
 
 const char *host = "pool-valves";
 const char *ssid = "CasaDeWolf";
 const char *password = "TheWolfBytes";
 
-const char *VERSION = "2.1.0";
+// GPIO32, GPIO33, GPIO25, GPIO26, GPIO27, GPIO14, GPIO12 and GPIO13.
 
-ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
+Valve jets(&console, &relayManager, &onOffDetector, 0, 1, 0, "spa", "both", "normal");
+Valve source(&console, &relayManager, &onOffDetector, 2, 3, 1, "pool", "both", "spa");
+Valve output(&console, &relayManager, &onOffDetector, 4, 5, 2, "pool", "both", "spa");
 
-IPAddress _mqttServer;
-WiFiClient _wifiClient;
-PubSubClient _mqtt(_wifiClient, _mqttServer);
+WebServer *httpServer = new WebServer(80);
 
-Valve jets(2, 14, "spa", "both", "normal");
-Valve source(16, 5, "pool", "both", "spa");
-Valve output(4, 0, "pool", "both", "spa");
+bool webServerSetup = false;
 
 const int MOTOR_TEMP = A0;
 
 unsigned long next_send = 0;
 
-void connectWiFi()
+String _deviceId = "pool001";
+String _topicPrefix = "pool001/valves/";
+
+void redirectToValvesPage()
 {
-  WiFi.begin("SLManCave", "TheWolfBytes");
-  ssid = "SLManCave";
+  httpServer->sendHeader("Location", String("/valves"), true);
+  httpServer->send(302, "text/plain");
+}
 
-  int attempt = 0;
+void handleTopic(String device, String action)
+{
+  console.println("Handling topic  " + String(device) + ", " + String(action));
 
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to " + String(ssid));
+  if (device == "source" && action == "pool")
+    source.setCurrentPosition(currentPosition_0);
+  if (device == "source" && action == "both")
+    source.setCurrentPosition(currentPosition_90);
+  if (device == "source" && action == "spa")
+    source.setCurrentPosition(currentPosition_180);
+  if (device == "output" && action == "pool")
+    output.setCurrentPosition(currentPosition_0);
+  if (device == "output" && action == "spa")
+    output.setCurrentPosition(currentPosition_180);
+  if (device == "output" && action == "both")
+    output.setCurrentPosition(currentPosition_90);
+  if (device == "spa" && action == "normal")
+    jets.setCurrentPosition(currentPosition_180);
+  if (device == "spa" && action == "both")
+    jets.setCurrentPosition(currentPosition_90);
+  if (device == "spa" && action == "jets")
+    jets.setCurrentPosition(currentPosition_0);
+}
 
-  int status = WiFi.status();
+void handleSetTiming(String port, String timing)
+{
+  EEPROM.begin(12);
+  uint16_t newTiming = atoi(timing.c_str()) * 1000;
 
-  while (status != WL_CONNECTED){
-    attempt++;
-    if (attempt == 20){
-      WiFi.begin("ByteMaster", "TheWolfBytes");
-      ssid = "ByteMaster";
-    }
-    else if (attempt == 40)
-    {
-      WiFi.begin("SoftwareLogistics", "TheWolfBytes");
-      ssid = "SoftwareLogistics";
-    }
-    else if (attempt == 60)
-    {
-      WiFi.begin("CasaDeWolf", "TheWolfBytes");
-      ssid = "CasaDeWolf";
-      attempt = 0;
-    }
+  if (port == "source")
+  {
+    source.setTiming(newTiming);
+    EEPROM.put(sizeof(uint16_t), newTiming);
+  }
+  else if (port == "output")
+  {
+    output.setTiming(newTiming);
+    EEPROM.put(sizeof(uint16_t) * 2, newTiming);
+  }
+  else if (port == "jets")
+  {
+    jets.setTiming(newTiming);
+    EEPROM.put(sizeof(uint16_t) * 4, newTiming);
+  }
+  EEPROM.end();
+}
 
-    delay(500);
-    Serial.print(".");
-    status = WiFi.status();
+
+class PoolPageHandler : public RequestHandler
+{
+  bool canHandle(HTTPMethod method, String uri)
+  {
+    console.println("webserver=handle; //  Method " + String(method) + " - " + uri);
+    return true;
   }
 
-  Serial.println();
+  boolean handleSet(StringSplitter *items)
+  {
+    if (items->getItemCount() > 2)
+    {
+      String segment = items->getItemAtIndex(1);
+      console.println("webserver=handlesegment; // parent = set; " + segment);
 
-  Serial.print("Connected To: ");
-  Serial.println(ssid);
-  Serial.print("IP Address  : ");
-  Serial.println(WiFi.localIP());
-  Serial.print("MAC Address : ");
-  Serial.println(WiFi.macAddress());
-  Serial.print("DNS Address : ");
-  Serial.println(WiFi.dnsIP());
-  Serial.print("Subnet Mask : ");
-  Serial.println(WiFi.subnetMask());
-  Serial.print("Gate Way    : ");
-  Serial.println(WiFi.gatewayIP());
+      if (segment == "relay")
+      {
+        if (items->getItemCount() > 4)
+        {
+          int relayIdx = atoi(items->getItemAtIndex(2).c_str());
+          bool action = items->getItemAtIndex(3) == "on";
+          relayManager.setRelay(relayIdx - 1, action);
+          sendTestPage(FIRMWARE_VERSION);
+        }
+        else
+        {
+          sendHomePage(FIRMWARE_VERSION);
+        }
+      }
+      else if(segment == "timing")
+      {
+        handleSetTiming(items->getItemAtIndex(2), items->getItemAtIndex(3));
+        redirectToValvesPage();
+      }
+      else
+      {
+        handleTopic(items->getItemAtIndex(1), items->getItemAtIndex(2));
+        redirectToValvesPage();
+      }
+    }
+    else
+    {
+      sendHomePage(FIRMWARE_VERSION);
+    }
 
+    return true;
+  }
+
+  bool handle(WebServer &server, HTTPMethod requestMethod, String requestUri)
+  {
+    StringSplitter *splitter = new StringSplitter(requestUri, '/', 6);
+    uint8_t itemCount = splitter->getItemCount();
+
+    if (itemCount > 0)
+    {
+      String segmentOne = splitter->getItemAtIndex(0);
+
+      if (segmentOne == "set")
+        handleSet(splitter);
+      else if (segmentOne == "relays")
+      {
+        sendTestPage(FIRMWARE_VERSION);
+      }
+      else if (segmentOne == "valves")
+      {
+        sendValveControlPage(FIRMWARE_VERSION);
+      }
+      else
+        sendHomePage(FIRMWARE_VERSION);
+    }
+    else
+    {
+      sendHomePage(FIRMWARE_VERSION);
+    }
+
+    delete splitter;
+
+    return true;
+  }
+} pageHandler;
+
+void handleRoot()
+{
+  httpServer->send(200, "text/plain", "hello from esp8266!");
+}
+
+void setupWebServer()
+{
+  httpServer->addHandler(&pageHandler);
+  httpServer->begin();
+  webServerSetup = true;
+}
+
+void initTimings() {
   EEPROM.begin(12);
   uint16_t initValue;
 
   EEPROM.get(0, initValue);
-  if(initValue != 0x4321){
-    int defaultValue = 14000;
-    Serial.println("EEPROM Not set, initialize values");
-    EEPROM.put(0, (uint16_t)0x4321);
+  if(initValue != 0x5432){
+    int defaultValue = 16000;
+    console.println("EEPROM Not set, initialize values");
+    EEPROM.put(0, (uint16_t)0x5432);
     EEPROM.put(sizeof(uint16_t), defaultValue);
     EEPROM.put(sizeof(uint16_t) * 2, defaultValue);
     EEPROM.put(sizeof(uint16_t) * 4, defaultValue);
   }
   else {
-    Serial.println("EEPROM has valid content");
+    console.println("EEPROM has valid content");
   }
 
   uint16_t timing = 0;
@@ -112,159 +228,108 @@ void connectWiFi()
   EEPROM.end();
 }
 
-String _deviceId = "pool001";
-String _topicPrefix = "pool001/valves/";
+void setup(void)
+{
+  delay(1000);
+  initPins();
 
-void handleTopic(String cmd){
-  Serial.println("Handling topic  " + String(cmd));
+  configureConsole();
 
-  if (cmd == "source/pool") source.setCurrentPosition(currentPosition_0);
-  else if (cmd == "source/both") source.setCurrentPosition(currentPosition_90);
-  else if (cmd == "source/spa") source.setCurrentPosition(currentPosition_180);
-  else if (cmd == "output/pool") output.setCurrentPosition(currentPosition_0);  
-  else if (cmd == "output/spa") output.setCurrentPosition(currentPosition_180);
-  else if (cmd == "output/both") output.setCurrentPosition(currentPosition_90);
-  else if (cmd == "spa/normal") jets.setCurrentPosition(currentPosition_180);
-  else if (cmd == "spa/both") jets.setCurrentPosition(currentPosition_90);
-  else if (cmd == "spa/jets") jets.setCurrentPosition(currentPosition_0);
-}
+  configureFileSystem();
 
-void callback(const MQTT::Publish &pub){
-  if (_topicPrefix.length() > 0){
-    String cmd = pub.topic().substring(_topicPrefix.length());
-    handleTopic(cmd);
-  }
-}
+  state.init(FW_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "plvl001", 010);
 
-void connectMQTT(){
-  _mqtt.disconnect();
-  _mqtt.set_server("mqttdev.nuviot.com");
+  ioConfig.load();
+  sysConfig.load();
+  sysConfig.WiFiEnabled = true;
+  sysConfig.SendUpdateRate = 5000;
 
-  if (_mqtt.connect(MQTT::Connect(_deviceId + "/valves").set_auth("kevinw", "Test1234"))){
-    Serial.println("Connected to MQTT server");
-    Serial.print("Subscribing to topic: ");
-    Serial.println(_topicPrefix + "#");
+  String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Valve Ctrlr" : sysConfig.DeviceId);
+  BT.begin(btName.c_str(), FW_SKU);
 
-    _mqtt.set_callback(callback);
+  ledManager.setup(&ioConfig);
+  ledManager.setOnlineFlashRate(1);
+  ledManager.setErrFlashRate(0);
 
-    if (_mqtt.subscribe(_topicPrefix + "#"))
-      Serial.println("Subscribed!");
-    else
-      Serial.println("Did not subscribe");
-  }
-  else
-    Serial.println("Could not connect to MQTT server.");
-}
+  onOffDetector.setup(&ioConfig);
 
-void redirectToSensorPage() {
-  httpServer.sendHeader("Location", String("/sensor"), true);
-  httpServer.send(302, "text/plain");
-}
+  ioConfig.Relay1Name = "jet_pwr";
+  ioConfig.Relay1Enabled = true;
+  ioConfig.Relay2Name = "jet_dir";
+  ioConfig.Relay3Enabled = true;
+  ioConfig.Relay3Name = "src_pwr";
+  ioConfig.Relay3Enabled = true;
+  ioConfig.Relay4Name = "src_dir";
+  ioConfig.Relay4Enabled = true;
+  ioConfig.Relay5Name = "out_pwr";
+  ioConfig.Relay5Enabled = true;
+  ioConfig.Relay6Name = "our_dir";
+  ioConfig.Relay6Enabled = true;
+  ioConfig.Relay7Name = "pool_light";
+  ioConfig.Relay7Enabled = true;
+  ioConfig.Relay8Name = "spa_light";
+  ioConfig.Relay8Enabled = true;
 
-void setTiming(String port, String timing) {
-  EEPROM.begin(12);
-  uint16_t newTiming = atoi(timing.c_str()) * 1000;
+  relayManager.setup(&ioConfig);
 
-  if(port == "source") {
-    source.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t), newTiming);
-  }
-  else if(port == "output") {
-    output.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t) * 2, newTiming);
-  }
-  else if(port == "jets") {
-    jets.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t) * 4, newTiming);
-  }
-  EEPROM.end();
-}
+  ioConfig.GPIO1Config = GPIO_CONFIG_INPUT;
+  ioConfig.GPIO1Name = "jet_center";  
+  configPins.InvertGpio1 = true;
+  
+  ioConfig.GPIO2Config = GPIO_CONFIG_INPUT;
+  ioConfig.GPIO2Name = "src_center";
+  configPins.InvertGpio2 = true;
 
-void handleRoot(){
-  httpServer.send(200, "text/plain", "hello from esp8266!");
-}
+  ioConfig.GPIO3Config = GPIO_CONFIG_INPUT;
+  ioConfig.GPIO3Name = "out_center";
+  configPins.InvertGpio3 = true;  
+  onOffDetector.setup(&ioConfig);
 
-void setupWebServer(){
-  httpServer.on("/", HTTP_GET, []() { httpServer.sendHeader("Connection", "close"); httpServer.send(200, "text/html", loginIndex); });
-  httpServer.on("/serverIndex", HTTP_GET, [](){ httpServer.sendHeader("Connection", "close"); httpServer.send(200, "text/html", serverIndex); });
-  httpServer.on("/status", HTTP_GET, []() { sendSensorData(); });
-  httpServer.on("/sensor", sendSensorData);
-  httpServer.on(UriRegex("\/set\/([a-z]+)\/([a-z]+)"), HTTP_GET, [&]() { handleTopic(httpServer.pathArg(0) + "/" + httpServer.pathArg(1)); redirectToSensorPage();} );
-  httpServer.on(UriRegex("\/settimeout\/([a-z]+)\/([0-9]+)"), HTTP_GET, [&]() { setTiming(httpServer.pathArg(0), httpServer.pathArg(1));  redirectToSensorPage();} );
-  httpUpdater.setup(&httpServer);
-  httpServer.begin();
-}
+  initTimings();  
 
-void setup(void){
-  Serial.begin(115200);
-  Serial.println();
-  Serial.println("Booting Sketch...");
-
-  connectWiFi();
-  connectMQTT();
-
-  setupWebServer();
-
-  if (!MDNS.begin(host)){ // http://esp32.local
-    Serial.println("Error setting up MDNS responder!");
-    while (1){
-      delay(1000);
-    }
-  }
-
-  Serial.println("mDNS responder started");
-
-  MDNS.addService("http", "tcp", 80);
-  Serial.printf("HTTPUpdateServer ready!\r\nOpen http://%s.local/update in your browser\r\n", host);
-
-  next_send = millis() + 50000;
+  wifiMgr.setup();
 }
 
 void loop(void)
 {
   int motorTempCount = analogRead(A0);
-  delay(25);
 
   jets.Update();
   source.Update();
   output.Update();
 
-  int status = WiFi.status();
+  relayManager.loop();
+  onOffDetector.loop();
 
-  if (status != WL_CONNECTED){
-    Serial.print("WiFi Connection Lost: ");
-    switch (status)
+  wifiMQTT.loop();
+
+  if (wifiMgr.isConnected())
+  {
+    if (!webServerSetup)
     {
-      case WL_NO_SHIELD: Serial.println("No Shield."); break;
-      case WL_IDLE_STATUS: Serial.println("Idle Status."); break;
-      case WL_NO_SSID_AVAIL: Serial.println("No SSID Available."); break;
-      case WL_SCAN_COMPLETED: Serial.println("Scan Completed."); break;
-      case WL_CONNECT_FAILED: Serial.println("Connect Failed."); break;
-      case WL_CONNECTION_LOST: Serial.println("Connection Lost."); break;
-      case WL_DISCONNECTED: Serial.println("Disconnected.");break;
-    }
-    connectWiFi();
-  }
-  else if (!_mqtt.connected()){
-    Serial.println("MQTT Connection Lost.");
-    connectMQTT();
-  }
-  else{
-    if (next_send < millis()){
-      String topic = "pool/valvestat/" + String(_deviceId);
-      String msg = "{\"deviceId\":\"" +
-                   String(_deviceId) +
-                   "\",\"ipaddress\":\"" +
-                   WiFi.localIP().toString() +
-                   "\",\"source\":\"" +
-                   source.getStatus() +
-                   "\",\"output\":\"" +
-                   output.getStatus() + "\",\"spa\":" + jets.getStatus() + "\", \"motorTemp\":" + String(motorTempCount) + "}";
-      _mqtt.publish(topic, msg);
-      next_send = millis() + 5000;
+      setupWebServer();
     }
 
-    httpServer.handleClient();
-    _mqtt.loop();
+    httpServer->handleClient();
+  }
+
+  if (next_send < millis())
+  {
+    String topic = "pool/valvestat/" + String(_deviceId);
+    String msg = "{\"deviceId\":\"" +
+                 String(_deviceId) +
+                 "\",\"ipaddress\":\"" +
+                 WiFi.localIP().toString() +
+                 "\",\"source\":\"" +
+                 source.getStatus() +
+                 "\",\"output\":\"" +
+                 output.getStatus() + "\",\"spa\":" + jets.getStatus() + "\", \"motorTemp\":" + String(motorTempCount) + "}";
+
+    console.println(msg);
+    next_send = millis() + sysConfig.SendUpdateRate;
+
+    console.setVerboseLogging(true);
+    relayManager.debugPrint();
+    onOffDetector.debugPrint();
   }
 }

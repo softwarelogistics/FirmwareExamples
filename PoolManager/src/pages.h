@@ -80,7 +80,7 @@ const char *serverIndex =
     "});"
     "</script>";
 
-void sendSensorData(){
+void sendSensorData(IOValues *values, String fwVersion){
   webServer->sendHeader("Connection", "close");
 
   String html = "<html>";
@@ -94,45 +94,49 @@ void sendSensorData(){
   html += "<body>";
   html += "<div class=\"container\">";
   html += "<div class=\"row\">";
-  html += "  <h1>Pool Valve Status</h1>";
-  html += "  <h1>Version 2.0.1</h1>";
+  html += "  <h1>Pool Heater</h1>";
+  html += "  <h1>Version" + fwVersion +  "</h1>";
   html += "</div>";
 
   html += "<div class=\"row\">";
   html += "  <div class='col-md-4'>";
   html += "   <div class=\"panel panel-primary\">";
-  html += "     <div class=\"panel-heading\">Source</div>";
+  html += "     <div class=\"panel-heading\">HEATER</div>";
   html += "     <div class=\"panel-body\" >";
-    html += "       <a href=\"/set/source/pool\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Pool</a><br /><br />";
-    html += "       <a href=\"/set/source/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
-    html += "       <a href=\"/set/source/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";
+  html += "       <a href=\"/set/heater/on\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >On</a><br /><br />";
+  html += "       <a href=\"/set/heater/off\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Off</a><br /><br />";
   html += "     </div>";
   html += "   </div>";
   html += "  </div>";
-
-  html += "  <div class='col-md-4'>";
-  html += "   <div class=\"panel panel-primary\">";
-  html += "     <div class=\"panel-heading\">Output</div>";
-  html += "     <div class=\"panel-body\" >";
-    html += "       <a href=\"/set/output/pool\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Pool</a><br /><br />";
-    html += "       <a href=\"/set/output/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
-    html += "       <a href=\"/set/output/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";  
-  html += "     </div>";
-  html += "   </div>";
   html += "  </div>";
-
-  html += "  <div class='col-md-4'>";
-  html += "   <div class=\"panel panel-primary\">";
-  html += "     <div class=\"panel-heading\">Spa</div>";
-  html += "     <div class=\"panel-body\" >";
-    html += "      <a href=\"/set/spa/jets\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Jets</a><br /><br />";
-    html += "      <a href=\"/set/spa/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
-    html += "      <a href=\"/set/spa/normal\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Normal</a><br /><br />";
-  html += "     </div>";
-  html += "   </div>";
-  html += "  </div>";
-
   html += "</div>";
+
+  html += "<div class=\"row\">";
+  html += "  <div class='col-md-4'>";
+  html += "     <div class=\"panel-heading\">STATUS ADC</div>";
+  html += "     <div class=\"panel-body\" >";  
+  html += "     <ol>";
+  for(int idx = 0; idx < 8; ++idx)  
+    html += "     <li>" + String(values->getValue(idx)) + "</li>";
+
+  html += "     </ol>";
+  html += "     </div>";
+  html += "  </div>";
+  html += "</div>";
+
+  html += "<div class=\"row\">";
+  html += "  <div class='col-md-4'>";
+  html += "     <div class=\"panel-heading\">STATUS IO</div>";
+  html += "     <div class=\"panel-body\" >";  
+  html += "     <ol>";
+  for(int idx = 8; idx < 16; ++idx)  
+    html += "     <li>" + String(values->getValue(idx)) + "</li>";
+
+  html += "     </ol>";
+  html += "     </div>";
+  html += "  </div>";
+  html += "</div>";
+
 
   html += "</div>";
 
@@ -140,10 +144,10 @@ void sendSensorData(){
 
 
 //  if(jets.getIsMoving() || source.getIsMoving() || output.getIsMoving()) {
-    html += "<script>";
-    html += " function autoRefresh() { window.location = window.location.href;}";
-    html += " setInterval('autoRefresh()', 2000);";
-    html += " </script>";
+    // html += "<script>";
+    // html += " function autoRefresh() { window.location = window.location.href;}";
+    // html += " setInterval('autoRefresh()', 2000);";
+    // html += " </script>";
   //}
 
   html += "</html>";

@@ -2,6 +2,9 @@
 #define Valve_h
 
 #include "Arduino.h"
+#include <RelayManager.h>
+#include <OnOffDetector.h>
+#include <Console.h>
 
 typedef enum currentPosition
 {
@@ -16,6 +19,7 @@ class Valve
 private:
     int m_powerPin;
     int m_dirPin;
+    int m_centerIndex;
     unsigned long m_finishCount;
     unsigned long m_nextTimeout;
     String m_pos0Name;
@@ -25,45 +29,55 @@ private:
     int m_move90_ms = 0;
     bool m_isMoving = false;
 
+    RelayManager *m_relayMgr;
+    OnOffDetector *m_onOffDetector;
+    Console *m_console;
+
 private:
     currentPosition_t m_currentPosition;
     currentPosition_t m_nextPosition;
 
-    typedef enum moveDirection{
+    typedef enum moveDirection
+    {
         moveDirection_off,
         moveDirection_cw,
         moveDirection_ccw,
     } moveDirection_t;
 
-    void setValve(moveDirection_t angle, long duration){
-        switch (angle){
+    void setValve(moveDirection_t angle, long duration)
+    {
+        switch (angle)
+        {
         case moveDirection_off:
-            Serial.print("OFF ");
+            m_console->print("OFF ");
             break;
         case moveDirection_cw:
-            Serial.print("CW ");
+            m_console->print("CW ");
             break;
         case moveDirection_ccw:
-            Serial.print("CCW ");
+            m_console->print("CCW ");
             break;
         }
-    
-        digitalWrite(m_powerPin, angle != moveDirection_off ? LOW : HIGH);
-        digitalWrite(m_dirPin, angle == moveDirection_cw ? LOW : HIGH);
-        if(duration > 0){
+
+        m_relayMgr->setRelay(m_powerPin, angle != moveDirection_off ? true : false);
+        m_relayMgr->setRelay(m_dirPin, angle == moveDirection_cw ? true : false);
+
+        if (duration > 0)
+        {
             m_nextTimeout = duration + millis();
-            Serial.println("Timeout: " + String(duration) + " " + String(m_nextTimeout) );
+            m_console->println("Timeout: " + String(duration) + " " + String(m_nextTimeout));
             m_isMoving = true;
         }
-        else {
+        else
+        {
             m_isMoving = false;
-            Serial.println("Timeout: 0");
+            m_console->println("Timeout: 0");
         }
-        
     }
 
 public:
-    Valve(int powerPin, int dirPin, String pos0Name, String pos90Name, String pos180Name){
+    Valve(Console *console, RelayManager *mgr, OnOffDetector *detector, int powerPin, int dirPin, int centerIndex, String pos0Name, String pos90Name, String pos180Name)
+    {
         m_pos0Name = pos0Name;
         m_pos90Name = pos90Name;
         m_pos180Name = pos180Name;
@@ -71,116 +85,138 @@ public:
         m_currentPosition = currentPosition_unknown;
         m_nextPosition = currentPosition_unknown;
 
+        m_relayMgr = mgr;
+        m_onOffDetector = detector;
+        m_console = console;
+
         m_nextTimeout = 0;
 
         m_powerPin = powerPin;
         m_dirPin = dirPin;
-        pinMode(m_powerPin, OUTPUT);
-        pinMode(m_dirPin, OUTPUT);
-        digitalWrite(m_powerPin, HIGH);
-        digitalWrite(m_dirPin, HIGH);
+        m_centerIndex = centerIndex;
     }
 
-    void setTiming(uint16_t timing) {
+    void setTiming(uint16_t timing)
+    {
         m_move90_ms = timing;
     }
 
-    uint16_t getTiming() {
+    uint16_t getTiming()
+    {
         return m_move90_ms;
     }
 
-    String getStatus() {        
-        if(m_isMoving){
+    String getStatus()
+    {
+        if (m_isMoving)
+        {
             return "moving";
         }
-        else {
-            switch (m_currentPosition){
-                case currentPosition_unknown:
-                    return "unknown";
+        else
+        {
+            switch (m_currentPosition)
+            {
+            case currentPosition_unknown:
+                return "unknown";
                 break;
-                case currentPosition_0:
-                    return m_pos0Name;
-                break;          
-                case currentPosition_90:
-                    return m_pos90Name;
-                break;          
-                case currentPosition_180:
-                    return m_pos180Name;
-                break;                                    
+            case currentPosition_0:
+                return m_pos0Name;
+                break;
+            case currentPosition_90:
+                return m_pos90Name;
+                break;
+            case currentPosition_180:
+                return m_pos180Name;
+                break;
             }
         }
     }
 
     currentPosition_t getCurrentPosition() { return m_currentPosition; }
 
-    void setCurrentPosition(currentPosition_t nextPosition){
-        if(m_isMoving)
+    void setCurrentPosition(currentPosition_t nextPosition)
+    {
+        if (m_isMoving)
             return;
 
-        if (nextPosition != m_currentPosition){
+        if (nextPosition != m_currentPosition)
+        {
             m_nextPosition = nextPosition;
 
-            switch (m_currentPosition){
+            switch (m_currentPosition)
+            {
             case currentPosition_unknown:
                 setValve(moveDirection_ccw, m_move90_ms * 2);
                 break;
             case currentPosition_0:
-                switch (nextPosition){
+                switch (nextPosition)
+                {
                 case currentPosition_90:
                     setValve(moveDirection_cw, m_move90_ms);
                     break;
                 case currentPosition_180:
                     setValve(moveDirection_cw, m_move90_ms * 2);
                     break;
-                    default: break;
-                }                
+                default:
+                    break;
+                }
                 break;
             case currentPosition_90:
-                switch (nextPosition){
+                switch (nextPosition)
+                {
                 case currentPosition_0:
                     setValve(moveDirection_ccw, m_move90_ms);
                     break;
                 case currentPosition_180:
                     setValve(moveDirection_cw, m_move90_ms);
                     break;
-                    default: break;
+                default:
+                    break;
                 }
-                
+
                 break;
             case currentPosition_180:
-                switch (nextPosition){
+                switch (nextPosition)
+                {
                 case currentPosition_0:
                     setValve(moveDirection_ccw, m_move90_ms * 2);
                     break;
                 case currentPosition_90:
                     setValve(moveDirection_ccw, m_move90_ms);
                     break;
-                    default: break;
-                }                
+                default:
+                    break;
+                }
                 break;
-            default: break;
-            }            
+            default:
+                break;
+            }
         }
     }
 
-    bool getIsMoving() {
+    bool getIsMoving()
+    {
         return m_isMoving;
     }
 
-    void Update(){
-        if(millis() > m_nextTimeout && m_isMoving) {
+    void Update()
+    {
+        if (millis() > m_nextTimeout && m_isMoving)
+        {
             m_isMoving = false;
-            if(m_currentPosition == currentPosition_unknown) {
+            if (m_currentPosition == currentPosition_unknown)
+            {
                 m_currentPosition = currentPosition_0;
-                Serial.println("position was unknown, moved to start.");
+                m_console->println("position was unknown, moved to start.");
 
                 setCurrentPosition(m_nextPosition);
             }
-            else {
+            else
+            {
                 m_isMoving = false;
                 m_currentPosition = m_nextPosition;
                 setValve(moveDirection_off, 0);
-                Serial.println("all done moved to " + getStatus());
+                m_console->println("all done moved to " + getStatus());
             }
         }
     }

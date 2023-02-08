@@ -91,6 +91,9 @@
 		{
 			"name": "PoolValveController",
 			"path": "PoolValveController"
+		},
+		{
+			"path": "RelayManager-X8"
 		}
 	],
 	"settings": {

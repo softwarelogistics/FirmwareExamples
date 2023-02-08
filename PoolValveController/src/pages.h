@@ -1,6 +1,6 @@
-#include "valve.h"
+#include <WebServer.h>
 
-extern ESP8266WebServer httpServer;
+extern WebServer *httpServer;
 
 extern Valve jets;
 extern Valve source;
@@ -84,8 +84,8 @@ const char *serverIndex =
     "});"
     "</script>";
 
-void sendSensorData(){
-  httpServer.sendHeader("Connection", "close");
+String getHeader(String fwVersion) {
+  httpServer->sendHeader("Connection", "close");
 
   String html = "<html>";
   html += "<head>";
@@ -99,8 +99,39 @@ void sendSensorData(){
   html += "<div class=\"container\">";
   html += "<div class=\"row\">";
   html += "  <h1>Pool Valve Status</h1>";
-  html += "  <h1>Version 2.0.1</h1>";
+  html += "  <h1>Version " + fwVersion + "</h1>";
   html += "</div>";
+
+  return html;
+}
+
+void sendHomePage(String fwVersion) {
+  String html = getHeader(fwVersion);
+  html += "</body>";
+  html += "</html>";
+
+  httpServer->send(200, "text/html", html);
+}
+
+void sendTestPage(String fwVersion) {
+  String html = getHeader(fwVersion);
+
+  for(int idx = 1; idx <= 8; ++idx) {
+    html += "<div class=\"row\">";
+    html += "  <div class=\"col-md-8\">Relay " + String(idx) + "(" + String(relayManager.getRelayState(idx-1)) + ")</div>";
+    html += "  <div class=\"col-md-2\"><a href=\"/set/relay/" + String(idx) + "/on\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >On</a></div>";  
+    html += "  <div class=\"col-md-2\"><a href=\"/set/relay/" + String(idx) + "/off\"  style=\"width:100px;height:64px\" class=\"btn btn-danger\" >Off</a></div>";  
+    html += "</div>";
+  }
+
+  html += "</body>";
+  html += "</html>";
+
+  httpServer->send(200, "text/html", html);
+}
+
+void sendValveControlPage(String fwVersion){
+  String html = getHeader(fwVersion);
 
   html += "<div class=\"row\">";
   html += "  <div class='col-md-4'>";
@@ -113,6 +144,7 @@ void sendSensorData(){
     html += "       <a href=\"/set/source/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "       <a href=\"/set/source/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";
   }
+  html += "         Centered: " + onOffDetector.getPinState(1) ? "on" : "off";
   html += "     </div>";
   html += "   </div>";
   html += "  </div>";
@@ -127,6 +159,7 @@ void sendSensorData(){
     html += "       <a href=\"/set/output/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "       <a href=\"/set/output/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";  
   }
+  html += "         Centered: " + onOffDetector.getPinState(2) ? "on" : "off";
   html += "     </div>";
   html += "   </div>";
   html += "  </div>";
@@ -141,6 +174,7 @@ void sendSensorData(){
     html += "      <a href=\"/set/spa/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "      <a href=\"/set/spa/normal\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Normal</a><br /><br />";
   }
+  html += "         Centered: " + onOffDetector.getPinState(0) ? "on" : "off";
   html += "     </div>";
   html += "   </div>";
   html += "  </div>";
@@ -161,5 +195,5 @@ void sendSensorData(){
 
   html += "</html>";
 
-  httpServer.send(200, "text/html", html);
+  httpServer->send(200, "text/html", html);
 }    
