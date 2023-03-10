@@ -1,4 +1,4 @@
-#define PROD_BRD_V1
+#define TEMP_SNSR_BOARD_V3
 
 #include <Arduino.h>
 #include <NuvIoT.h>
@@ -36,9 +36,10 @@ void setup()
   sysConfig.WiFiEnabled = false;
   sysConfig.CellEnabled = true;
   sysConfig.Commissioned = true;
-  sysConfig.SrvrHostName = SRVR_HOST_NAME;
-  sysConfig.SrvrUID = SRVR_UID;
-  sysConfig.SrvrPWD = SRVR_PWD;
+  sysConfig.SrvrHostName = "mqttdev.nuviot.com";
+  sysConfig.SrvrType = "mqtt";
+  sysConfig.SrvrUID = "kevinw";
+  sysConfig.SrvrPWD = "Test1234";
   sysConfig.DeviceId = "CELLDEMO";
 
   console.setVerboseLogging(false);
@@ -58,5 +59,7 @@ void loop()
     nextPrint = millis() + 1000;
     console.println("Hello World => " + String(idx++));
     console.newline();
+
+    mqttPublish("hithere","testing");
   }
 }

@@ -94,10 +94,20 @@
 		},
 		{
 			"path": "RelayManager-X8"
+		},
+		{
+			"path": "NuvIoT-SensorBoard.Cellular"
+		},
+		{
+			"path": "CellularHX711"
+		},
+		{
+			"path": "HX711"
 		}
 	],
 	"settings": {
 		"files.associations": {
+			"*.h": "cpp",
 			"*.tcc": "cpp",
 			"fstream": "cpp",
 			"istream": "cpp",
@@ -119,7 +129,8 @@
 			"xstring": "cpp",
 			"xtree": "cpp",
 			"xutility": "cpp",
-			"string_view": "cpp"
+			"string_view": "cpp",
+			"regex": "cpp"
 		}
 	}
 }
