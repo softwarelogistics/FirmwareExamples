@@ -47,11 +47,11 @@ void setup()
   sysConfig.SrvrType = "mqtt";
   sysConfig.Port = 1883;
   sysConfig.SrvrHostName = "paw-mqtt.iothost.net";
-  sysConfig.SrvrUID = XXXXX;
-  sysConfig.SrvrPWD = XXXXX;
+  //sysConfig.SrvrUID = XXXXX;
+  //sysConfig.SrvrPWD = XXXXX;
   sysConfig.WiFiEnabled = false;
   sysConfig.CellEnabled = true;
-  sysConfig.Commissioned = true;
+  sysConfig.Commissioned = false;
   sysConfig.DeviceId = "mg2";
   sysConfig.SendUpdateRate = 60;
   state.init(SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "wmd", 010);
@@ -111,7 +111,7 @@ void loop()
     loadCell.set_gain(32);
     sampleBuffer[1][idx] = loadCell.get_value();
 
-    console.print(String(idx) + "Weight ");
+    console.print(String(idx) + ". Weight ");
     console.print(String(sampleBuffer[0][idx]));
     console.print(", ");
     console.print(String(sampleBuffer[1][idx]));
@@ -124,7 +124,7 @@ void loop()
       for(int sensor_index = 0; sensor_index < 2; ++sensor_index)
       {
         idx = 0;
-
+        if(sysConfig.Commissioned){
         // Let the server add in the time stamp.
         msgBuffer[0] = 0;
         msgBuffer[1] = 0;
@@ -152,23 +152,11 @@ void loop()
         long start = millis();
         uint16_t buffSize = (SAMPLE_SIZE * 2) + 10;
 
-        if(sysConfig.Commissioned){
           mqttPublish("infmon/" + sysConfig.DeviceId + "/sensor/" + String(sensor_index + 1) + "/weight", msgBuffer, buffSize, QOS0);
           delay(1000);
         }
 
       }
     }
-
-   
-  }
-
-  if (nextPrint < millis() && running)
-  {
-    nextPrint = millis() + sysConfig.SendUpdateRate * 1000;
-    console.println("Hello World => " + String(idx++) + " " + String(modem.isServiceConnected()));
-    console.newline();
-
-    //  mqttPublish("hithere","testing");
   }
 }
