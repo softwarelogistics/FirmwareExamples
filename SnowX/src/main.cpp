@@ -1,10 +1,13 @@
-#define TEMP_SNSR_BOARD_V3
+#define CHARGE_BOARD_V1
 
 #include <Arduino.h>
+#include <NeoPixelBus.h>
 #include <NuvIoT.h>
 #include <HX711.h>
+#include "images.h"
+#include "nav.h"
 
-#define SKU "HX711_RDR"
+#define SKU "SNOWX"
 #define FIRMWARE_VERSION "0.2.0"
 #define HARDWARE_REVISION "5"
 
@@ -19,6 +22,10 @@ HX711 loadCell;
 
 #define LOAD_CELL_SCK 25
 #define LOAD_CALL_DOUT 26
+
+#define NUMBER_LEDS 64
+
+NeoPixelBus<NeoGrbFeature, NeoEsp32I2s1X8Ws2812xMethod> strip1(NUMBER_LEDS, 25); // note: modern WS2812 with letter like WS2812b
 
 void cmdCallback(String cmd)
 {
@@ -36,23 +43,26 @@ void setup()
 {
   delay(1000);
 
-  configureFileSystem();
+  strip1.Begin();
+  resetShape(&strip1);
+  drawShape( right_slight, &strip1, 0, 255, 0);
+  setFlags(&strip1, false, false, 3);
+  strip1.Show();
 
-  loadCell.begin(LOAD_CALL_DOUT, LOAD_CELL_SCK);
-  loadCell.set_scale(1);
-  loadCell.set_offset(0);
+  configureFileSystem();
 
   ioConfig.load();
   sysConfig.load();
   sysConfig.SrvrType = "mqtt";
   sysConfig.Port = 1883;
   sysConfig.SrvrHostName = "paw-mqtt.iothost.net";
-  //sysConfig.SrvrUID = XXXXX;
-  //sysConfig.SrvrPWD = XXXXX;
+  sysConfig.SrvrUID = "nuviot";
+//  sysConfig.SrvrPWD = "Test1234";
+  sysConfig.SrvrPWD = "4NuvIoT!";
   sysConfig.WiFiEnabled = false;
   sysConfig.CellEnabled = true;
-  sysConfig.Commissioned = false;
-  sysConfig.DeviceId = "mg2";
+  sysConfig.Commissioned = true;
+  sysConfig.DeviceId = "snowx001";
   sysConfig.SendUpdateRate = 60;
   state.init(SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "wmd", 010);
 
@@ -64,7 +74,6 @@ void setup()
   configureModem();
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Weight Sensor" : sysConfig.DeviceId);
-
   BT.begin(btName.c_str(), SKU);
 
   ledManager.setup(&ioConfig);
@@ -75,16 +84,14 @@ void setup()
 
   console.setVerboseLogging(false);
 
+  client.enableGPS(true);
+
   if (sysConfig.Commissioned && sysConfig.CellEnabled)
   {
     connect();
   }
 
   welcome(SKU, FIRMWARE_VERSION);
-
-  
-  //  connect();
-  // put your setup code here, to run once:
 }
 
 int nextPrint = 0;
@@ -95,16 +102,25 @@ byte msgBuffer[4096];
 
 #define SAMPLE_INTERVAL 1.0
 
+int shapeIndex = 0;
+
 void loop()
 {
   commonLoop();
-
+  
   if (nextCapture < millis())
   {
     nextCapture = millis() + 1000;
+    readGPS()->debugPrint(&console);
+    resetShape(&strip1);
+    drawShape(left_slight, &strip1, 0, 255, 0);
+    setFlags(&strip1, false, true, 3);
+    //drawShape(left_hard, &strip1, 255, 0, 0);
+    strip1.Show();
+  }
+}
+ /*
 
-    loadCell.set_offset(ioConfig.GPIO1Zero);
-    loadCell.set_gain(64);
     sampleBuffer[0][idx] = loadCell.get_value();
 
     loadCell.set_offset(ioConfig.GPIO2Zero);
@@ -123,6 +139,8 @@ void loop()
     {
       for(int sensor_index = 0; sensor_index < 2; ++sensor_index)
       {
+
+        
         idx = 0;
         if(sysConfig.Commissioned){
         // Let the server add in the time stamp.
@@ -152,11 +170,11 @@ void loop()
         long start = millis();
         uint16_t buffSize = (SAMPLE_SIZE * 2) + 10;
 
-          mqttPublish("infmon/" + sysConfig.DeviceId + "/sensor/" + String(sensor_index + 1) + "/weight", msgBuffer, buffSize, QOS0);
+       //   mqttPublish("infmon/" + sysConfig.DeviceId + "/sensor/" + String(sensor_index + 1) + "/weight", msgBuffer, buffSize, QOS0);
           delay(1000);
         }
 
       }
     }
   }
-}
+}*/

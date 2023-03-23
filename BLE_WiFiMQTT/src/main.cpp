@@ -113,7 +113,7 @@ void loop()
 
         wifiMQTT.loop();
         console.println("wifi=" + wifiMgr.getWiFiStatus() + ";");
-        console.println(wifiMQTT.isConnected() ? "mqtt=connected;" : "mqtt=disconnected;");
+        console.println(wifiMQTT.isConnected() ? "mqttserver=connected;" : "mqttserver=disconnected;");
         console.println("---------------------------------");
 
         delay(500);

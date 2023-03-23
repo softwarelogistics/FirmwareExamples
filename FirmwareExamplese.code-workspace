@@ -103,6 +103,9 @@
 		},
 		{
 			"path": "HX711"
+		},
+		{
+			"path": "SnowX"
 		}
 	],
 	"settings": {
