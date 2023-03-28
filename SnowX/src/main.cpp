@@ -7,6 +7,9 @@
 #include "images.h"
 #include "nav.h"
 
+#include <GeoPosition.h>
+
+
 #define SKU "SNOWX"
 #define FIRMWARE_VERSION "0.2.0"
 #define HARDWARE_REVISION "5"
@@ -61,7 +64,7 @@ void setup()
   sysConfig.SrvrPWD = "4NuvIoT!";
   sysConfig.WiFiEnabled = false;
   sysConfig.CellEnabled = true;
-  sysConfig.Commissioned = true;
+  sysConfig.Commissioned = false;
   sysConfig.DeviceId = "snowx001";
   sysConfig.SendUpdateRate = 60;
   state.init(SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "wmd", 010);
@@ -111,10 +114,18 @@ void loop()
   if (nextCapture < millis())
   {
     nextCapture = millis() + 1000;
-    readGPS()->debugPrint(&console);
+    GPSData *geo = readGPS();
+    geo->debugPrint(&console);
+
+    unsigned long start = millis();
+    int poi = findApproachingPOI(44.581943, -94.7039, 90); 
+    unsigned long deltaMS = millis() - start;
+
+    console.println("run => " + String(deltaMS) + " ms " + String(poi));
+
     resetShape(&strip1);
     drawShape(left_slight, &strip1, 0, 255, 0);
-    setFlags(&strip1, false, true, 3);
+    setFlags(&strip1, false, geo->Fixstatus == "1", 3);
     //drawShape(left_hard, &strip1, 255, 0, 0);
     strip1.Show();
   }
