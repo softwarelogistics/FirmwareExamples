@@ -106,6 +106,15 @@
 		},
 		{
 			"path": "SnowX"
+		},
+		{
+			"path": "GeoPointArray_Upload"
+		},
+		{
+			"path": "Common"
+		},
+		{
+			"path": "BLE-DFU"
 		}
 	],
 	"settings": {

@@ -70,7 +70,7 @@ void setup()
   state.init(SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "wmd", 010);
 
   initPins();
-
+0
   configureConsole();
   writeConfigPins();
 
@@ -106,6 +106,8 @@ byte msgBuffer[4096];
 #define SAMPLE_INTERVAL 1.0
 
 int shapeIndex = 0;
+
+
 
 void loop()
 {

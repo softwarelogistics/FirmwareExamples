@@ -7,8 +7,6 @@
 #define HARDWARE_REVISION "*"
 #define EXAMPLE_SKU "BLE - GATT Example"
 
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
-
 bool running = true;
 
 void cmdCallback(String cmd)
@@ -42,7 +40,7 @@ void setup()
     sysConfig.SendUpdateRate = 1000;
 
     welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
-    state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "BLE001", 010);
+    state.init(EXAMPLE_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "snowx", 010);
 
     BT.begin("NuvIoT - BLE Sample", "123456790");
 }

@@ -105,7 +105,7 @@ void loop()
 
     loadCell.set_offset(ioConfig.GPIO1Zero);
     loadCell.set_gain(64);
-    sampleBuffer[0][idx] = loadCell.get_value();
+    sampleBuffer[0][idx] = loadCell.get_value() - 1360000;
 
     loadCell.set_offset(ioConfig.GPIO2Zero);
     loadCell.set_gain(32);
