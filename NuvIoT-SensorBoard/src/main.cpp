@@ -37,10 +37,10 @@ void setup()
 
   configureConsole();
   
-  determineSensorConfiguration(&ioConfig, &console, IO1_PIN, IO2_PIN);
 
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
+  determineSensorConfiguration(&ioConfig, &console, IO1_PIN, IO2_PIN);
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Temp Sensor" : sysConfig.DeviceId);
 
   BT.begin(btName.c_str(), TEMP_SNSR_SKU);
