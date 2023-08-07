@@ -80,7 +80,7 @@ const char *serverIndex =
     "});"
     "</script>";
 
-void sendSensorData(IOValues *values, String fwVersion){
+void sendSensorData(boolean heaterOn, boolean isHeating, IOValues *values, String fwVersion){
   webServer->sendHeader("Connection", "close");
 
   String html = "<html>";
@@ -95,7 +95,27 @@ void sendSensorData(IOValues *values, String fwVersion){
   html += "<div class=\"container\">";
   html += "<div class=\"row\">";
   html += "  <h1>Pool Heater</h1>";
-  html += "  <h1>Version" + fwVersion +  "</h1>";
+  html += "  <h1>Version: " + fwVersion +  "</h1>";
+  html += "</div>";
+
+  html += "<div class=\"row\">";
+  html += "  <h1>Pool Heater</h1>";
+  if(heaterOn){
+    html += "<h4 style='color:red'>Heater=ON</h4>";
+  }
+  else {
+    html += "<h4>Heater=OFF</h4>";
+  }
+  html += "</div>";
+
+  html += "<div class=\"row\">";
+  html += "  <h1>Currently Heating</h1>";
+  if(isHeating){
+    html += "<h4 style='color:red'>Heater=ON</h4>";
+  }
+  else {
+    html += "<h4>Heater=OFF</h4>";
+  }
   html += "</div>";
 
   html += "<div class=\"row\">";
