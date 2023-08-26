@@ -8,7 +8,7 @@
 #include <NuvIoTSensors.h>
 
 #define TEMP_SNSR_SKU "RSB-01"
-#define FIRMWARE_VERSION "0.9.2"
+#define FIRMWARE_VERSION "0.9.5"
 #define HARDWARE_REVISION "4.0"
 
 #define BATT_SENSE_PIN 34

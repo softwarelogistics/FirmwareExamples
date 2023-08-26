@@ -108,6 +108,13 @@ void sendSensorData(boolean heaterOn, boolean isHeating, IOValues *values, Strin
   }
   html += "</div>";
 
+  html += "LowPressure  :";    
+  html += (ioValues.getValue(0 + 8) == "1" ? "OK" : "Warning<br />");
+  html += "Flow:";
+  html += (ioValues.getValue(1 + 8) == "1" ? "OK" : "Warning<br />");
+  html += "High Pressure:";
+  html += (ioValues.getValue(3 + 8) == "1" ? "OK" : "Warning<br />");
+
   html += "<div class=\"row\">";
   html += "  <h1>Currently Heating</h1>";
   if(isHeating){

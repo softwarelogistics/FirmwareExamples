@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <NuvIoT.h>
+#include "../../Common/set_secrets.h"
 
 #define EXAMPLE_SKU "CIM001"
 #define FIRMWARE_VERSION "0.3.0"
@@ -27,23 +28,13 @@ void setup()
   configureConsole();
   
   console.registerCallback(cmdCallback);
-
-  configureModem();
-
+  
   welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
   state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "dfu001", 010);
-
-  sysConfig.WiFiEnabled = false;
-  sysConfig.CellEnabled = true;
+ 
   sysConfig.Commissioned = true;
-  sysConfig.SrvrType = "mqtt";
-  sysConfig.SrvrHostName = "pt1.seawolf.iothost.net";
-  //sysConfig.Anonymous = true;
-  sysConfig.SrvrUID = "seawolf";
-  sysConfig.SrvrPWD = "4NuvIoT!";
-  sysConfig.DeviceId = "sim001";
-  sysConfig.PingRate = 60;
-  sysConfig.SendUpdateRate = 2500;
+  sysConfig.WiFiEnabled = true;
+  setSysConfigSecrets(&sysConfig);
 
   console.setVerboseLogging(false);
   connect();

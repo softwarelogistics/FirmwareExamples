@@ -13,7 +13,7 @@
 
 #include <uri/UriRegex.h>
 
-#define FIRMWARE_VERSION "2.5.0"
+#define FIRMWARE_VERSION "2.5.2"
 #define HARDWARE_REVISION "5"
 #define FW_SKU "POOL001"
 
@@ -220,11 +220,13 @@ void loop()
     adc.loop();
     onOffDetector.loop();
 
+    float temperature = atof(ioValues.getValue(3).c_str()) * 32.0f;
+
     if(_heaterOn) {
-        if(atof(ioValues.getValue(3).c_str()) > 2.8) {
+        if(temperature > 91) {
             _shouldHeat = false;
         }
-        else if(atof(ioValues.getValue(3).c_str()) < 2.70) {
+        else if(temperature < 90) {
             _shouldHeat = true;
         }
     }
@@ -252,21 +254,16 @@ void loop()
     {
         if (nextSend < millis() || nextSend == 0)
         {
-            String msg = "{'heaterOn':" + String(_heaterOn) + ",'heating':" + String(_shouldHeat) + ","
-                        "'in':" +
-                         ioValues.getValue(3) + ","
-                                                "'out':" +
-                         ioValues.getValue(4) + ","
+            
 
-                                                "'lowPressure':" +
-                         (ioValues.getValue(0 + 8) == "1" ? "'ok'" : "'warning'") + ","
-                                                                                    "'flow':" +
-                         (ioValues.getValue(1 + 8) == "1" ? "'ok'" : "'warning'") + ","
-                                                                                    "'highpressure':" +
-                         (ioValues.getValue(3 + 8) == "1" ? "'ok'" : "'warning'") + ","
-
-                                                                                    "'ipaddress':'" +
-                         wifiMgr.getIPAddress() + "','err':'" + err + "'}";
+            String msg = "{'heaterOn':" + String(_heaterOn) + 
+                         ",'heating':" + String(_shouldHeat) + 
+                         ",'in':" + String(temperature) + 
+                         ",'out':" +ioValues.getValue(4) + 
+                         ",'lowPressure':" + (ioValues.getValue(0 + 8) == "1" ? "'ok'" : "'warning'") + 
+                         ",'flow':" +(ioValues.getValue(1 + 8) == "1" ? "'ok'" : "'warning'") + 
+                         ",'highpressure':" +(ioValues.getValue(3 + 8) == "1" ? "'ok'" : "'warning'") + 
+                         ",'ipaddress':'" +wifiMgr.getIPAddress() + "','err':'" + err + "'}";
 
             wifiMQTT.publish("poolctrlr/poolheater/" + sysConfig.DeviceId, msg);
             console.println(msg);
