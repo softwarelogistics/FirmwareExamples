@@ -1,14 +1,14 @@
-#include <Arduino.h>
-
 #define RELAY_BRD_V1
 
+#include <Arduino.h>
 #include <NuvIoT.h>
 
 #define FIRMWARE_VERSION "1.0.0"
 #define EXAMPLE_SKU "ADC Example"
 
 void setup() {
-  ioConfig.ADC1Config = ADC_CONFIG_ADC;
+  // @todo: make function to abstract this process 
+  ioConfig.ADC1Config = ADC_CONFIG_ADC; 
   ioConfig.ADC1Name = "adc1";
   ioConfig.ADC1Scaler = 2.0;
   ioConfig.ADC1Calibration = 1.0;
@@ -50,6 +50,7 @@ void setup() {
 
   initPins();
 
+  // @todo: display error description for i2c address fail
   configureI2C();
   configureConsole();
   
