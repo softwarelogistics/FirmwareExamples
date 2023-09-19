@@ -1,4 +1,4 @@
-#define PROD_BRD_V1
+#define TEMP_SNSR_BOARD_V3
 
 #include <Arduino.h>
 #include <NuvIoT.h>
@@ -7,7 +7,6 @@
 #define FIRMWARE_VERSION "1.0.0"
 #define HARDWARE_REVISION "*"
 
-int beepRate = 0;
 int onlineRate = 0;
 int errRate = 0;
 
