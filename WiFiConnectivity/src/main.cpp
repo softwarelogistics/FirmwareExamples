@@ -14,11 +14,11 @@ void setup() {
 
   ledManager.setup(&ioConfig);
   
-  sysConfig.DeviceId = "?";
+  sysConfig.DeviceId = "testboard01";
   sysConfig.Commissioned = true;
   sysConfig.WiFiEnabled = true;
-  sysConfig.WiFiSSID = "[YOURSSID]";
-  sysConfig.WiFiPWD = "[YOURPWD]";
+  sysConfig.WiFiSSID = "";
+  sysConfig.WiFiPWD = "";
 
   state.init(WIFI_EXAMPLE_SKU, FIRMWARE_VERSION, "pcl001", "DONTCARE", 010);
 }
