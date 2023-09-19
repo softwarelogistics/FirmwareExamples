@@ -1,7 +1,7 @@
-#include <Arduino.h>
-
 #define GPIO_BRD_V2
-#include <Objects.h>
+
+#include <Arduino.h>
+#include <NuvIoT.h>
 
 #define VERSION "1.0.0"
 #define FIRMWARE_SKU "TMP_PROB_EX"

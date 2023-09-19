@@ -54,7 +54,6 @@ void setup()
 
     sysConfig.setDefaults();
     BT.begin("NuvIoT - IO Values", "422700856E40445687BE6B41D25CBFDE");
-
     welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
 
     state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "cfg001", 010);
@@ -95,7 +94,7 @@ void loop()
 {
     console.loop();
     BT.update();
-
+    Serial.println("forever");
     if (nextPrint < millis() && running)
     {
         /* We are passing in an array of 
