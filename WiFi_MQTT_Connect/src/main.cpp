@@ -1,3 +1,6 @@
+/* #define PROD_BRD_V1 */
+#define TEMP_SNSR_BOARD_V3
+
 #include <Arduino.h>
 #include <NuvIoT.h>
 
@@ -16,10 +19,10 @@ void setup() {
   sysConfig.DeviceId = "?";
   sysConfig.Commissioned = true;
   sysConfig.WiFiEnabled = true;
-  sysConfig.WiFiSSID = "CasaDeWolf";
-  sysConfig.WiFiPWD = "TheWolfBytes";
+  sysConfig.WiFiSSID = "";
+  sysConfig.WiFiPWD = "";
 
-  state.init(WIFI_MQTT_EXAMPLE_SKU, FIRMWARE_VERSION, "wfmq001", 010);
+  state.init(WIFI_MQTT_EXAMPLE_SKU, FIRMWARE_VERSION, "v.12", "wfmq001", 010);
 }
 
 void loop() {

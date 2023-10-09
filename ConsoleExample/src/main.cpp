@@ -9,20 +9,24 @@
 byte buffer[8];
 bool running = true;
 
-void cmdCallback(String cmd)
-{
-  if (cmd == "exit")
-  {
+/**
+ *
+ * @brief Sets the status of the command. Modifies the global `return` boolean variable.
+ *
+ * @param cmd:   Command signaling the function wether to restart or exit the program.
+ * 
+ **/
+
+void cmdCallback(String cmd){
+  if (cmd == "exit"){
     running = false;
   }
-  else if (cmd == "restart")
-  {
+  else if (cmd == "restart"){
     running = true;
   }
 }
 
-void setup()
-{
+void setup(){
   initPins();
 
   ledManager.setup(&ioConfig);
@@ -31,8 +35,7 @@ void setup()
   configureConsole();
   console.registerCallback(cmdCallback);
 
-  for (byte idx = 0; idx < 8; ++idx)
-  {
+  for (byte idx = 0; idx < 8; ++idx){
     buffer[idx] = 0x32 + idx;
   }
 
@@ -44,15 +47,13 @@ void setup()
 int nextPrint = 0;
 int idx = 0;
 
-void loop()
-{
+void loop(){
   // console.loop() should be called to look for any input coming in
   // via a serial port.
   console.loop();
   //ledManager.loop();
 
-  if (nextPrint < millis() && running)
-  {
+  if (nextPrint < millis() && running){
     nextPrint = millis() + 1000;
     console.println("Hello World => " + String(idx++));
     console.printError("Not good!");

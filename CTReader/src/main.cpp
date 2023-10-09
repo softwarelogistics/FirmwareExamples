@@ -1,8 +1,7 @@
-#include <Arduino.h>
-
 #define GPIO_BRD_V2
 
-#include <Objects.h>
+#include <Arduino.h>
+#include <NuvIoT.h>
 
 #define VERSION "1.0.0"
 #define FW_SKU "CT Example"
@@ -11,7 +10,6 @@
 void setup() {
   ioConfig.ADC1Config = ADC_CONFIG_CT;
   ioConfig.ADC1Name = "ct1";
-  ioConfig.ADC1Label = "Current Tranformer 1";
   ioConfig.ADC1Scaler = 33.0;
 
   configureConsole();

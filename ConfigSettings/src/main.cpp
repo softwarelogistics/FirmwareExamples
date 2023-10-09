@@ -1,4 +1,4 @@
-#define PROD_BRD_V1
+#define TEMP_SNSR_BOARD_V3
 
 #include <Arduino.h>
 #include <NuvIoT.h>
@@ -8,8 +8,6 @@
 
 byte buffer[8];
 bool running = true;
-
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager);
 
 void cmdCallback(String cmd)
 {
