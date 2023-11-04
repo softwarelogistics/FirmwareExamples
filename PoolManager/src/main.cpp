@@ -13,7 +13,7 @@
 
 #include <uri/UriRegex.h>
 
-#define FIRMWARE_VERSION "2.5.2"
+#define FIRMWARE_VERSION "2.5.4"
 #define HARDWARE_REVISION "5"
 #define FW_SKU "POOL001"
 
@@ -220,7 +220,7 @@ void loop()
     adc.loop();
     onOffDetector.loop();
 
-    float temperature = atof(ioValues.getValue(3).c_str()) * 32.0f;
+    float temperature = atof(ioValues.getValue(3).c_str()) * 32.75f;
 
     if(_heaterOn) {
         if(temperature > 91) {

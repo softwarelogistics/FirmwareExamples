@@ -143,6 +143,7 @@ void sendValveControlPage(String fwVersion){
     html += "       <a href=\"/set/source/pool\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Pool</a><br /><br />";
     html += "       <a href=\"/set/source/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "       <a href=\"/set/source/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";
+    html += "       <a href=\"/set/source/reset\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Rest</a><br /><br />";
   }
   html += "         Centered: " + onOffDetector.getPinState(1) ? "on" : "off";
   html += "     </div>";
@@ -158,6 +159,7 @@ void sendValveControlPage(String fwVersion){
     html += "       <a href=\"/set/output/pool\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Pool</a><br /><br />";
     html += "       <a href=\"/set/output/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "       <a href=\"/set/output/spa\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Spa</a><br /><br />";  
+    html += "       <a href=\"/set/output/reset\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Reset</a><br /><br />";  
   }
   html += "         Centered: " + onOffDetector.getPinState(2) ? "on" : "off";
   html += "     </div>";
@@ -173,6 +175,7 @@ void sendValveControlPage(String fwVersion){
     html += "      <a href=\"/set/spa/jets\"    style=\"width:100px;height:64px\" class=\"btn btn-success\" >Jets</a><br /><br />";
     html += "      <a href=\"/set/spa/both\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Both</a><br /><br />";
     html += "      <a href=\"/set/spa/normal\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Normal</a><br /><br />";
+    html += "      <a href=\"/set/spa/reset\"  style=\"width:100px;height:64px\" class=\"btn btn-success\" >Reset</a><br /><br />";
   }
   html += "         Centered: " + onOffDetector.getPinState(0) ? "on" : "off";
   html += "     </div>";

@@ -134,6 +134,12 @@ public:
 
     currentPosition_t getCurrentPosition() { return m_currentPosition; }
 
+    void reset() {
+        currentPosition_t lastPosition = m_currentPosition;
+        m_currentPosition = currentPosition_unknown;
+        setCurrentPosition(lastPosition);
+    }
+
     void setCurrentPosition(currentPosition_t nextPosition)
     {
         if (m_isMoving)

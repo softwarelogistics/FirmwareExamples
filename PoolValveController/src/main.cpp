@@ -26,7 +26,7 @@
 //#include <uri/UriRegex.h>
 
 #define FW_SKU "PLVL001"
-#define FIRMWARE_VERSION "0.6.0"
+#define FIRMWARE_VERSION "0.6.5"
 #define HARDWARE_REVISION "COT-01"
 
 const char *host = "pool-valves";
@@ -47,9 +47,6 @@ const int MOTOR_TEMP = A0;
 
 unsigned long next_send = 0;
 
-String _deviceId = "pool001";
-String _topicPrefix = "pool001/valves/";
-
 void redirectToValvesPage()
 {
   httpServer->sendHeader("Location", String("/valves"), true);
@@ -66,18 +63,26 @@ void handleTopic(String device, String action)
     source.setCurrentPosition(currentPosition_90);
   if (device == "source" && action == "spa")
     source.setCurrentPosition(currentPosition_180);
+  if (device == "source" && action == "reset")
+    source.reset();
+
   if (device == "output" && action == "pool")
     output.setCurrentPosition(currentPosition_0);
   if (device == "output" && action == "spa")
     output.setCurrentPosition(currentPosition_180);
   if (device == "output" && action == "both")
     output.setCurrentPosition(currentPosition_90);
+  if (device == "output" && action == "reset")
+    output.reset();
+
   if (device == "spa" && action == "normal")
     jets.setCurrentPosition(currentPosition_180);
   if (device == "spa" && action == "both")
     jets.setCurrentPosition(currentPosition_90);
   if (device == "spa" && action == "jets")
     jets.setCurrentPosition(currentPosition_0);
+  if (device == "spa" && action == "reset")    
+    jets.reset();
 }
 
 void handleSetTiming(String port, String timing)
@@ -170,9 +175,10 @@ class PoolPageHandler : public RequestHandler
       else if (segmentOne == "valves")
       {
         sendValveControlPage(FIRMWARE_VERSION);
-      }
-      else
+      }   
+      else {
         sendHomePage(FIRMWARE_VERSION);
+      }
     }
     else
     {
@@ -301,7 +307,7 @@ void loop(void)
   relayManager.loop();
   onOffDetector.loop();
 
-  wifiMQTT.loop();
+  commonLoop();
 
   if (wifiMgr.isConnected())
   {
@@ -315,21 +321,23 @@ void loop(void)
 
   if (next_send < millis())
   {
-    String topic = "pool/valvestat/" + String(_deviceId);
+    String topic = "pool/valvestat/" + String(sysConfig.DeviceId);
     String msg = "{\"deviceId\":\"" +
-                 String(_deviceId) +
+                 String(sysConfig.DeviceId) +
                  "\",\"ipaddress\":\"" +
                  WiFi.localIP().toString() +
                  "\",\"source\":\"" +
                  source.getStatus() +
                  "\",\"output\":\"" +
-                 output.getStatus() + "\",\"spa\":" + jets.getStatus() + "\", \"motorTemp\":" + String(motorTempCount) + "}";
+                 output.getStatus() + 
+                 "\",\"spa\":\"" +
+                 jets.getStatus() + 
+                 "\", \"motorTemp\":" + 
+                 String(motorTempCount) + "}";
+
+    mqttPublish(topic, msg);
 
     console.println(msg);
     next_send = millis() + sysConfig.SendUpdateRate;
-
-    console.setVerboseLogging(true);
-    relayManager.debugPrint();
-    onOffDetector.debugPrint();
   }
 }
