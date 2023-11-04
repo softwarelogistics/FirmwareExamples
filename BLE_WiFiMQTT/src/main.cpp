@@ -1,17 +1,13 @@
+#define RELAY_BRD_V1
+
 #include <Arduino.h>
+#include <NuvIoT.h>
 
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <WiFi.h>
-
-#include <NuvIoT.h>
-
-
-#define RELAY_BRD_V1
-
-//#include <NuvIoT.h>
 
 #define FIRMWARE_VERSION "1.0.0"
 #define HARDWARE_REVISION "*"
@@ -56,8 +52,6 @@ String getWiFiStatus(int status)
 
     return statusMsg;
 }
-
-BLE BT(&console, &hal, &state, &ioConfig, &sysConfig, &relayManager, payload);
 
 bool running = true;
 

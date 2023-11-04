@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
-#include "../../Common/set_secrets.h"
+#include "set_secrets.h"
 
 #define GEO_POINT_ARRAY_UPLOAD_EXAMPLE_SKU "GEO_PT_UPLOAD"
 #define FIRMWARE_VERSION "1.0.0"
@@ -24,6 +24,7 @@ void setup()
 }
 
 #define SAMPLE_COUNT 60
+
 #define SAMPLE_INTERVAL 1
 
 float sampleBuffer[SAMPLE_COUNT][2];

@@ -9,8 +9,7 @@
 
 bool running = true;
 
-void cmdCallback(String cmd)
-{
+void cmdCallback(String cmd){
     console.println("Receive CMD: " + cmd);
     cmd.trim();
 
@@ -26,8 +25,7 @@ void cmdCallback(String cmd)
     }
 }
 
-void setup()
-{
+void setup(){
     delay(1000);
 
     initPins();
@@ -47,15 +45,12 @@ void setup()
 
 long nextConsoleUpdate = 0;
 bool lastIsConnected = false;
-void loop()
-{    
+void loop(){    
     console.loop();
     BT.update();
 
-    if (nextConsoleUpdate < millis())
-    {
-        if (running)
-        {            
+    if (nextConsoleUpdate < millis()){
+        if (running){            
             nextConsoleUpdate = millis() + 1000;
             BT.refreshCharacteristics();
         }

@@ -1,21 +1,13 @@
 #define PROD_BRD_V1
 
 #include <Arduino.h>
+#include <NuvIoT.h>
 
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <WiFi.h>
-
-#include <NuvIoT.h>
-
-//#include <NuvIoT.h>
-
-/*
- * This example will show how to cycle the power on the communications
- * peripheral.  
- */
 
 #define FIRMWARE_VERSION "1.0.0"
 #define HARDWARE_REVISION "*"

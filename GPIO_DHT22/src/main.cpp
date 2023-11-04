@@ -1,7 +1,6 @@
-#include <Arduino.h>
-
 #define TEMP_SNSR_BOARD_V3
 
+#include <Arduino.h>
 #include <NuvIoT.h>
 
 #define HARDWARE_VERSION "1.0.0"

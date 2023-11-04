@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
-#include "../../common/set_secrets.h"
+#include "set_secrets.h"
 
 #define EXAMPLE_SKU "BLE-DFU"
 #define FIRMWARE_VERSION "0.3.0"
