@@ -13,33 +13,29 @@
 
 #include <uri/UriRegex.h>
 
-#define FIRMWARE_VERSION "2.5.4"
+#define FIRMWARE_VERSION "2.6.5"
 #define HARDWARE_REVISION "5"
 #define FW_SKU "POOL001"
 
 #include <PageHandler.h>
 #include "pages.h"
 
-/*
- * Temperature 2.62 - 79.7 (in)
- * Temperature 2.68 - 82.7
- * Temperature 2.53 =  84.0
- * Temperature 2.59 =  85.5
- * Temperature 2.74 =  88.3
- * Temperature 2.87 =  92.2
- * Temperature 2.86 =  94
- * Temperature 2.89  = 98
- * Temperature 2.95  = 98
- *  2.90 - 90
- *             2.97 =  101.5
- *
- */
-
 boolean _shouldHeat = false;
 boolean _heaterOn = false;
 
-WebServer *webServer = new WebServer(80);
 
+String _lastError = "none";
+double temperatureIn = -1;
+double temperatureOut = -1;
+bool hasFlow = false;
+bool lowPressure = false;
+bool highPressure = false;
+
+int poolMode;
+float spaSetPoint;
+float poolSetPoint;
+
+WebServer *webServer = new WebServer(80);
 
 void redirectToSensorPage()
 {
@@ -47,7 +43,8 @@ void redirectToSensorPage()
     webServer->send(302, "text/plain");
 }
 
-void setHeater(boolean isOn){
+void setHeater(boolean isOn)
+{
     _heaterOn = isOn;
     state.updateProperty("TrueFalse", "heateron", isOn ? "true" : "false");
 }
@@ -59,7 +56,7 @@ void handleTopic(String topic)
 void handleApi(String noun, String verb)
 {
     redirectToSensorPage();
-    setHeater(verb == "on");    
+    setHeater(verb == "on");
 }
 
 class PoolPageHandler : public RequestHandler
@@ -98,47 +95,42 @@ class PoolPageHandler : public RequestHandler
     }
 } pageHandler;
 
+#define HEATER_MODE_OFF 0
+#define HEATER_MODE_POOL 1
+#define HEATER_MODE_HOT_TUB 2
 
 void setup()
 {
-    delay(5000);
-
     configureFileSystem();
 
     state.init(FW_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
 
     configureConsole();
 
+    console.setVerboseLogging(false);
+
     initPins();
+
+    writeConfigPins();
 
     ioConfig.load();
     sysConfig.load();
-    sysConfig.WiFiEnabled = true;
-    sysConfig.SendUpdateRate = 5000;
+    sysConfig.SendUpdateRateMS = 5000;
 
-    ioConfig.ADC4Config = ADC_CONFIG_ADC;
-    ioConfig.ADC4Name = "in4";
-    ioConfig.ADC4Scaler = 1;
-    ioConfig.ADC4Calibration = 1;
-    ioConfig.ADC4Zero = 0;
+    ioConfig.GPIO1Config = GPIO_CONFIG_DBS18;
+    ioConfig.GPIO1Name = "temperatureIn";
 
-    ioConfig.ADC5Config = ADC_CONFIG_ADC;
-    ioConfig.ADC5Name = "out5";
-    ioConfig.ADC5Scaler = 1;
-    ioConfig.ADC5Calibration = 1;
-    ioConfig.ADC5Zero = 0;
+    ioConfig.GPIO2Config = GPIO_CONFIG_DBS18;
+    ioConfig.GPIO2Name = "temperatureOut";
 
-    ioConfig.GPIO1Config = GPIO_CONFIG_INPUT;
-    ioConfig.GPIO1Name = "lowpressure";
-    configPins.InvertGpio1 = false;
+    ioConfig.GPIO6Config = GPIO_CONFIG_INPUT;
+    ioConfig.GPIO6Name = "lowpressure";
 
-    ioConfig.GPIO2Config = GPIO_CONFIG_INPUT;
-    ioConfig.GPIO2Name = "flow";
-    configPins.InvertGpio1 = true;
+    ioConfig.GPIO7Config = GPIO_CONFIG_INPUT;
+    ioConfig.GPIO7Name = "flow";
 
-    ioConfig.GPIO4Config = GPIO_CONFIG_INPUT;
-    ioConfig.GPIO4Name = "highpressure";
-    configPins.InvertGpio4 = false;
+    ioConfig.GPIO8Config = GPIO_CONFIG_INPUT;
+    ioConfig.GPIO8Name = "highpressure";
 
     ioConfig.Relay1Name = "heat1";
     ioConfig.Relay1Enabled = true;
@@ -158,16 +150,19 @@ void setup()
 
     configureI2C();
 
+    probes.setup(&ioConfig);
     onOffDetector.setup(&ioConfig);
     relayManager.setup(&ioConfig);
 
     state.registerBool("heateron", false);
-    _heaterOn = state.getBool("heateron");
 
-    adc.setUseFiltering(24, 2);
-    adc.setBankEnabled(1, true);
-    adc.setBankEnabled(2, true);
-    adc.setup(&ioConfig);
+    state.registerInt("poolmode", HEATER_MODE_OFF);
+    state.registerFloat("poolsetpoint", 89);
+    state.registerFloat("hottubsetpoint", 103);
+
+    poolMode = state.getInt("poolmode");
+    spaSetPoint = state.getFlt("hottubsetpoint");
+    poolSetPoint = state.getFlt("poolsetpoint");
 
     wifiMgr.setup();
 }
@@ -191,18 +186,70 @@ void setupWebServer()
     webServerSetup = true;
 }
 
+void readSensors() {
+    temperatureIn = ioValues.getIODoubleValue(0);
+    temperatureOut = ioValues.getIODoubleValue(1);
+    hasFlow = ioValues.getIOValue(5) == "0";
+    lowPressure = ioValues.getIOValue(6) == "1";
+    highPressure = ioValues.getIOValue(7) == "1";
+}
+
+void engageHeater() {
+    poolMode = state.getInt("poolmode");
+    spaSetPoint = state.getFlt("hottubsetpoint");
+    poolSetPoint = state.getFlt("poolsetpoint");
+
+    _lastError = "none";
+
+    if(!hasFlow) {
+        _shouldHeat = false;
+        _lastError = "lowpressure";
+    }
+    else if(poolMode == HEATER_MODE_OFF){
+        _shouldHeat = false;
+    }
+    else {        
+        float setPoint = poolMode == HEATER_MODE_POOL ? poolSetPoint : spaSetPoint;
+        if(temperatureIn > setPoint + 0.5) {
+            _shouldHeat = false;
+        }
+        else if(temperatureIn < setPoint - 0.5) {
+            _shouldHeat = true;
+        }
+    }
+    
+    relayManager.setRelay(0, _shouldHeat);
+    relayManager.setRelay(1, _shouldHeat);
+    relayManager.setRelay(2, _shouldHeat);
+}
+
+void sendUpdate() {
+    String msg = "{'heating':" + String(_shouldHeat) +
+                    ",'poolMode':" + String(poolMode) +
+                    ",'spaSetPoint':" + String(spaSetPoint) +
+                    ",'poolSetPoint':" + String(poolSetPoint) +
+                    ",'in':" + String(temperatureIn) +
+                    ",'out':" + String(temperatureOut) +
+                    ",'lowPressure':" + (lowPressure ? "'ok'" : "'warning'") +
+                    ",'flow':" + (hasFlow ? "'ok'" : "'warning'") +
+                    ",'highpressure':" + (highPressure ? "'ok'" : "'warning'") +
+                    ",'ipaddress':'" + wifiMgr.getIPAddress() + "'" +
+                    ",'err':'" + _lastError + "'}";
+    console.println(msg);
+
+    if (wifiMgr.isConnected())
+    {
+        wifiMQTT.publish("poolctrlr/poolheater/" + sysConfig.DeviceId, msg);
+        wifiMQTT.sendIOValues(&ioValues);
+        wifiMQTT.sendRelayStatus(&relayManager);
+    }
+}
+
 void loop()
 {
-    console.loop();
-    ledManager.loop();
-    hal.loop();
-    BT.update();
-    wifiMgr.loop();
-
-    if (state.OTAState == 100)
-    {
-        ota.downloadOverWiFi();
-    }
+    commonLoop();
+    readSensors();
+    engageHeater();
 
     if (wifiMgr.isConnected())
     {
@@ -214,67 +261,10 @@ void loop()
         webServer->handleClient();
     }
 
-    delay(1000);
-    wifiMQTT.loop();
-
-    adc.loop();
-    onOffDetector.loop();
-
-    float temperature = atof(ioValues.getValue(3).c_str()) * 32.75f;
-
-    if(_heaterOn) {
-        if(temperature > 91) {
-            _shouldHeat = false;
-        }
-        else if(temperature < 90) {
-            _shouldHeat = true;
-        }
-    }
-    else {
-        _shouldHeat = false;
-    }
-
-    String err = "none";
-
-    if (ioValues.getValue(1 + 8) == "1")
+    if (nextSend < millis() || nextSend == 0)
     {
-        relayManager.setRelay(0, _shouldHeat);
-        relayManager.setRelay(1, _shouldHeat);
-        relayManager.setRelay(2, _shouldHeat);
-    }
-    else
-    {
-        relayManager.setRelay(0, 0);
-        relayManager.setRelay(1, 0);
-        relayManager.setRelay(2, 0);
-        err = "lowpressure";
-    }
+        nextSend = millis() + sysConfig.SendUpdateRateMS;        
 
-    if (wifiMgr.isConnected())
-    {
-        if (nextSend < millis() || nextSend == 0)
-        {
-            
-
-            String msg = "{'heaterOn':" + String(_heaterOn) + 
-                         ",'heating':" + String(_shouldHeat) + 
-                         ",'in':" + String(temperature) + 
-                         ",'out':" +ioValues.getValue(4) + 
-                         ",'lowPressure':" + (ioValues.getValue(0 + 8) == "1" ? "'ok'" : "'warning'") + 
-                         ",'flow':" +(ioValues.getValue(1 + 8) == "1" ? "'ok'" : "'warning'") + 
-                         ",'highpressure':" +(ioValues.getValue(3 + 8) == "1" ? "'ok'" : "'warning'") + 
-                         ",'ipaddress':'" +wifiMgr.getIPAddress() + "','err':'" + err + "'}";
-
-            wifiMQTT.publish("poolctrlr/poolheater/" + sysConfig.DeviceId, msg);
-            console.println(msg);
-
-            wifiMQTT.sendIOValues(&ioValues);
-            wifiMQTT.sendRelayStatus(&relayManager);
-            nextSend = millis() + sysConfig.SendUpdateRate;
-            console.setVerboseLogging(true);
-            adc.debugPrint();
-            onOffDetector.debugPrint();
-            relayManager.debugPrint();
-        }
+        sendUpdate();
     }
 }

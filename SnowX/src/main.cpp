@@ -11,7 +11,7 @@
 
 
 #define SKU "SNOWX"
-#define FIRMWARE_VERSION "0.2.0"
+#define FIRMWARE_VERSION "0.2.5"
 #define HARDWARE_REVISION "5"
 
 #define SAMPLE_COUNT 2
@@ -56,45 +56,29 @@ void setup()
 
   ioConfig.load();
   sysConfig.load();
-  sysConfig.SrvrType = "mqtt";
-  sysConfig.Port = 1883;
-  sysConfig.SrvrHostName = "paw-mqtt.iothost.net";
-  sysConfig.SrvrUID = "nuviot";
-//  sysConfig.SrvrPWD = "Test1234";
-  sysConfig.SrvrPWD = "4NuvIoT!";
-  sysConfig.WiFiEnabled = false;
-  sysConfig.CellEnabled = true;
-  sysConfig.Commissioned = false;
-  sysConfig.DeviceId = "snowx001";
-  sysConfig.SendUpdateRate = 60;
   state.init(SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "wmd", 010);
 
   initPins();
-0
+
   configureConsole();
   writeConfigPins();
 
-  configureModem();
+  welcome(SKU, FIRMWARE_VERSION);
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Weight Sensor" : sysConfig.DeviceId);
   BT.begin(btName.c_str(), SKU);
 
   ledManager.setup(&ioConfig);
   ledManager.setOnlineFlashRate(1);
-  ledManager.setErrFlashRate(0);
+  ledManager.setErrFlashRate(5);
 
   sysConfig.print();
 
-  console.setVerboseLogging(false);
+  console.setVerboseLogging(true);
 
-  client.enableGPS(true);
 
-  if (sysConfig.Commissioned && sysConfig.CellEnabled)
-  {
-    connect();
-  }
-
-  welcome(SKU, FIRMWARE_VERSION);
+  configureModem();
+  connect();
 }
 
 int nextPrint = 0;

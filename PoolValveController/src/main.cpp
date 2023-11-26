@@ -248,7 +248,7 @@ void setup(void)
   ioConfig.load();
   sysConfig.load();
   sysConfig.WiFiEnabled = true;
-  sysConfig.SendUpdateRate = 5000;
+  sysConfig.SendUpdateRateMS = 5000;
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Valve Ctrlr" : sysConfig.DeviceId);
   BT.begin(btName.c_str(), FW_SKU);
@@ -338,6 +338,6 @@ void loop(void)
     mqttPublish(topic, msg);
 
     console.println(msg);
-    next_send = millis() + sysConfig.SendUpdateRate;
+    next_send = millis() + sysConfig.SendUpdateRateMS;
   }
 }

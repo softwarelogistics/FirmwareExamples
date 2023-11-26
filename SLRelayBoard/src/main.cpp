@@ -6,7 +6,7 @@
 #include <Wire.h>
 
 #define TEMP_SNSR_SKU "RLY010"
-#define FIRMWARE_VERSION "0.5.1"
+#define FIRMWARE_VERSION "0.6.1"
 #define HARDWARE_REVISION "5.0"
 
 byte buffer[8];
@@ -29,10 +29,12 @@ void setup(){
   adc.setBankEnabled(1, true);
   adc.setBankEnabled(2, true);
   adc.setup(&ioConfig);
+  pulseCounter.setup(&ioConfig);
+  onOffDetector.setup(&ioConfig);
 
   ledManager.setup(&ioConfig);
   ledManager.setOnlineFlashRate(1);
-  ledManager.setErrFlashRate(0);
+  ledManager.setErrFlashRate(5);
   
   welcome(TEMP_SNSR_SKU, FIRMWARE_VERSION);
 
@@ -42,7 +44,9 @@ void setup(){
 
   wifiMgr.setup();  
 
-  configureModem();
+  if(sysConfig.CellEnabled)
+    configureModem();
+
   connect();
   console.println("setup=completed;");
 }
