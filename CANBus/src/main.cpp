@@ -1,14 +1,16 @@
 #define CAN_ENABLED
-#define PROD_BRD_V1_CAN
+#define CAN_BRD_V1
 
 #include <Arduino.h>
 #include <NuvIoT.h>
+#include "esp_err.h"
 
 #include "driver/gpio.h"
 #include "driver/twai.h"
 
 
 #define EXAMPLE_SKU "CAN_BUS_EXAMPLE"
+#define FW_SKU "CAN_BRD_V1"
 #define FIRMWARE_VERSION "1.0.0"
 
 uint8_t count = 0;
@@ -25,37 +27,41 @@ void consoleHandler(String cmd){
       message.flags = TWAI_MSG_FLAG_NONE;
   }
 
-  if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {
-      console.println("Message queued for transmission\n");
-  } else {
-      console.println("Failed to queue message for transmission\n");
-  }
+  twai_status_info_t status;
 
+  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_get_status_info(&status));
+
+  console.println("Current status: " + String(status.state));
+
+  esp_err_t err = twai_transmit(&message, pdMS_TO_TICKS(1000));
+  ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 }
 
 void setup()
 {
   initPins();
 
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_17, GPIO_NUM_5, TWAI_MODE_NORMAL);
+  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)configPins.CANTx, (gpio_num_t)configPins.CANRx, TWAI_MODE_NORMAL);
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
   twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
-
   configureConsole();
+  configureFileSystem();
+
+  ioConfig.load();
+  sysConfig.load();
+  sysConfig.SendUpdateRateMS = 5000;
+
   console.registerCallback(consoleHandler);
 
   welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
 
-  if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK)
-  {
-    console.println("Driver installed\n");
-  }
-  else
-  {
-    console.println("Failed to install driver\n");
-    return;
-  }
+  String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "CAN Bus BT Example" : sysConfig.DeviceId);
+  BT.begin(btName.c_str(), FW_SKU);
+
+  
+
+  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_driver_install(&g_config, &t_config, &f_config));
 
   // Start CAN driver
   if (twai_start() == ESP_OK)
@@ -69,11 +75,7 @@ void setup()
   }
 
   uint32_t alerts_to_enable = TWAI_ALERT_ERR_PASS | TWAI_ALERT_BUS_OFF;
-  if (twai_reconfigure_alerts(alerts_to_enable, NULL) == ESP_OK) {
-      printf("Alerts reconfigured\n");
-  } else {
-      printf("Failed to reconfigure alerts");
-  }
+  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_reconfigure_alerts(alerts_to_enable, NULL));
 
   state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "cns001", 010);
 }
@@ -82,8 +84,8 @@ int nextPrint = 0;
 int idx = 0;
 
 void loop()
-{
-  console.loop();
+{  
+  commonLoop();
 
   twai_message_t  message;
   if (twai_receive(&message, pdMS_TO_TICKS(1000)) == ESP_OK)
@@ -93,6 +95,8 @@ void loop()
         console.setVerboseLogging(true);
         console.print("Message received id: " + String(message.identifier) + " len: " + String(message.data_length_code) + " data: ");
         console.printByteArray(message.data, message.data_length_code);      
+
+        BT.writeCANMessage(message.identifier, message.data, message.data_length_code);
         console.setVerboseLogging(false);
     }
   }
