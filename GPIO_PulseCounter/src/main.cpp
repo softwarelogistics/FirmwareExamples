@@ -1,12 +1,12 @@
 /* #define RELAY_BRD_V1 */
 
-#define PROD_BRD_V1
+#define CAN_BRD_V1
 
 #include <Arduino.h>
 #include <NuvIoT.h>
 
 #define FIRMWARE_VERSION "1.0.0"
-#define EXAMPLE_SKU "GPIO - Inputs Example"
+#define EXAMPLE_SKU "Pulse Counter Example"
 
 void setup() {
   ioConfig.GPIO1Config = GPIO_CONFIG_PULSE_COUNTER;
@@ -21,26 +21,6 @@ void setup() {
   ioConfig.GPIO3Name = "gpio3";
   ioConfig.GPIO3Scaler = 1.0;
 
-  ioConfig.GPIO4Config = GPIO_CONFIG_PULSE_COUNTER;
-  ioConfig.GPIO4Name = "gpio4";
-  ioConfig.GPIO4Scaler = 1.0;
-
-  ioConfig.GPIO5Config = GPIO_CONFIG_PULSE_COUNTER;
-  ioConfig.GPIO5Name = "gpio5";
-  ioConfig.GPIO5Scaler = 1.0;
-
-  ioConfig.GPIO6Config = GPIO_CONFIG_PULSE_COUNTER;
-  ioConfig.GPIO6Name = "gpio6";
-  ioConfig.GPIO6Scaler = 1.0;
-
-  ioConfig.GPIO7Config = GPIO_CONFIG_PULSE_COUNTER;
-  ioConfig.GPIO7Name = "gpio7";
-  ioConfig.GPIO7Scaler = 1.0;
-
-  ioConfig.GPIO8Config = GPIO_CONFIG_PULSE_COUNTER;
-  ioConfig.GPIO8Name = "gpio8";
-  ioConfig.GPIO8Scaler = 1.0;
-
   configureConsole();
   
   welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
@@ -50,11 +30,16 @@ void setup() {
   pulseCounter.setup(&ioConfig);
 }
 
+uint32_t reportInterval = 0;
+
 void loop() {
-  console.setVerboseLogging(true);
-  pulseCounter.loop();
-  pulseCounter.debugPrint();
-  console.println("--");
   commonLoop();
-  delay(100);
+  
+  if(millis() > reportInterval) {
+    console.setVerboseLogging(true);
+    pulseCounter.debugPrint();
+    console.println("--");
+    console.setVerboseLogging(false);
+    reportInterval = millis() + 1000;
+  }
 }

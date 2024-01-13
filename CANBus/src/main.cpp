@@ -10,11 +10,14 @@
 
 #define EXAMPLE_SKU "CAN_BUS_EXAMPLE"
 #define FW_SKU "CAN_BRD_V1"
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "0.6.2"
 
 uint8_t count = 0;
 
 CANEngineSensors sensor(&console);
+
+TaskHandle_t commonLoopTask;
+TaskHandle_t bleLoopTask;
 
 void consoleHandler(String cmd)
 {
@@ -30,16 +33,15 @@ void consoleHandler(String cmd)
     message.flags = TWAI_MSG_FLAG_NONE;
   }
 
-  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_transmit(&message, pdMS_TO_TICKS(1000)));
+  if(canBus.readStatus())
+    ESP_ERROR_CHECK_WITHOUT_ABORT(twai_transmit(&message, pdMS_TO_TICKS(1000)));
 }
 
 void setup()
 {
   initPins();
 
-  twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)configPins.CANTx, (gpio_num_t)configPins.CANRx, TWAI_MODE_NORMAL);
-  twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
-  twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  canBus.setup();
 
   configureConsole();
   configureFileSystem();
@@ -48,6 +50,10 @@ void setup()
   sysConfig.load();
   sysConfig.SendUpdateRateMS = 5000;
 
+  ledManager.setup(&ioConfig);
+  ledManager.setOnlineFlashRate(1);
+  ledManager.setErrFlashRate(5);
+
   console.registerCallback(consoleHandler);
 
   welcome(EXAMPLE_SKU, FIRMWARE_VERSION);
@@ -55,23 +61,39 @@ void setup()
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "CAN Bus BT Example" : sysConfig.DeviceId);
   BT.begin(btName.c_str(), FW_SKU);
 
-  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_driver_install(&g_config, &t_config, &f_config));
+  state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "cns001", 010);  
 
-  // Start CAN driver
-  if (twai_start() == ESP_OK)
-  {
-    console.println("Driver started\n");
+  state.registerBool("fuel", false);
+  state.registerBool("cooling", false);
+  state.registerBool("battery", false);
+  state.printRemoteProperties();
+
+  if(sysConfig.CellEnabled) {
+    console.println("Cellular Enabled");
+    configureModem();
   }
-  else
-  {
-    console.println("Failed to start driver\n");
-    return;
-  }
 
-  uint32_t alerts_to_enable = TWAI_ALERT_ERR_PASS | TWAI_ALERT_BUS_OFF;
-  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_reconfigure_alerts(alerts_to_enable, NULL));
+  connect();
 
-  state.init(EXAMPLE_SKU, FIRMWARE_VERSION, "0.0.0", "cns001", 010);
+/*
+  xTaskCreatePinnedToCore(
+    communicationsTask,
+    "Communications Task",
+    10000,
+    NULL,
+    0, 
+    &commonLoopTask,
+    1);
+
+  xTaskCreatePinnedToCore(
+    bleTask,
+    "Bluetooth Update Task",
+    5000,
+    NULL,
+    0, 
+    &bleLoopTask,
+    1);
+*/
 }
 
 int nextPrint = 0;
@@ -86,102 +108,93 @@ bool bilgeOn = false;
 bool highWaterDetection = false;
 float coolantFlow = 80.4;
 
+
 void sendBatteryLevels(int batteryInstance, float voltage)
 {
-  twai_message_t message;
-  message.identifier = 0x9F21440;
-  message.data_length_code = 8;
-  message.extd = 1;
-
-  message.data[0] = batteryInstance;
+  uint8_t buffer[8];
+  buffer[0] = batteryInstance;
   int intVoltage = voltage * 100;
-  message.data[1] = intVoltage & 0xFF;
-  message.data[2] = (intVoltage >> 8) & 0xFF;
-  message.data[3] = 0xFF;
-  message.data[4] = 0xFF;
-  message.data[5] = 0xFF;
-  message.data[6] = 0xFF;
-  message.data[7] = 0xFF;
+  buffer[1] = intVoltage & 0xFF;
+  buffer[2] = (intVoltage >> 8) & 0xFF;
+  buffer[3] = 0xFF;
+  buffer[4] = 0xFF;
+  buffer[5] = 0xFF;
+  buffer[6] = 0xFF;
+  buffer[7] = 0xFF;
 
-  ESP_ERROR_CHECK_WITHOUT_ABORT(twai_transmit(&message, pdMS_TO_TICKS(1000)));
+  canBus.send(0x9F21440, buffer, 8);
 }
 
 void sendCustomEngineProperties()
 {
-    twai_message_t message;
-    message.identifier = 0x9E20140;
-    message.data_length_code = 8;
-    message.extd = 1;
+  uint8_t buffer[8];
+  buffer[0] = 0;
+  buffer[1] = 1;
+  buffer[2] = fuelRate & 0xFF;
+  buffer[3] = (fuelRate >> 8) & 0xFF;
+  buffer[4] = fuelPressure & 0xFF;
+  buffer[5] = (fuelPressure >> 8) & 0xFF;
+  buffer[6] = manifoldPressure & 0xFF;
+  buffer[7] = (manifoldPressure >> 8) & 0xFF;
+  canBus.send(0x9E20140, buffer, 8);
 
-    for (uint8_t j = 1; j < 8; ++j)
-      message.data[j] = 0xFF;
-
-    message.data[0] = 0;
-    message.data[1] = 1;
-    message.data[2] = fuelRate & 0xFF;
-    message.data[3] = (fuelRate >> 8) & 0xFF;
-    message.data[4] = fuelPressure & 0xFF;
-    message.data[5] = (fuelPressure >> 8) & 0xFF;
-    message.data[6] = manifoldPressure & 0xFF;
-    message.data[7] = (manifoldPressure >> 8) & 0xFF;
-    ESP_ERROR_CHECK_WITHOUT_ABORT(twai_transmit(&message, pdMS_TO_TICKS(1000)));
 }
 
 void sendCustom2Properties() {
-    twai_message_t message;
-    message.identifier = 0x9E20240;
-    message.data_length_code = 8;
-    message.extd = 1;
+  uint8_t buffer[8];
+  for (uint8_t j = 1; j < 8; ++j)
+    buffer[j] = 0xFF;
 
-    for (uint8_t j = 1; j < 8; ++j)
-      message.data[j] = 0xFF;
+  buffer[0] = 0;
+  buffer[1] = 1;
+  buffer[2] = 0x00;
+  if (bilgeOn)
+    buffer[2] |= 0b00000010;
 
-    message.data[0] = 0;
-    message.data[1] = 1;
-    message.data[2] = 0x00;
-    if(bilgeOn)
-      message.data[2] |= 0b00000010;
+  if (highWaterDetection)
+    buffer[2] |= 0b00000010;
 
-    if(highWaterDetection)
-      message.data[2] |= 0b00000010;
+  buffer[3] = (int)(coolantFlow * 100) & 0xFF;
+  buffer[4] = ((int)(coolantFlow * 100) >> 8) & 0xFF;
 
-    message.data[3] = (int)(coolantFlow * 100) & 0xFF;
-    message.data[4] = ((int)(coolantFlow * 100) >> 8) & 0xFF;
-    ESP_ERROR_CHECK_WITHOUT_ABORT(twai_transmit(&message, pdMS_TO_TICKS(1000)));
+  canBus.send(0x9E20240, buffer, 8);  
 }
 
 void loop()
 {
   commonLoop();
+  console.loop();
 
   if (millis() > __nextCanSend && sysConfig.DeviceId != "candev01")
   {
-    __nextCanSend = millis() + 500;
+    __nextCanSend = millis() + 1000;
 
-    sendCustomEngineProperties();
-    delay(50);
-    sendBatteryLevels(1, 12 + ((float)random(-10, 10) / 10.0));
-    delay(50);
-    sendBatteryLevels(2, 12 + ((float)random(-10, 10) / 10.0));
-    delay(50);
-    sendBatteryLevels(3, 12 + ((float)random(-10, 10) / 10.0));
-    delay(50);
-    sendBatteryLevels(4, 12 + ((float)random(-10, 10) / 10.0));    
-    delay(50);
-    sendBatteryLevels(5, 12 + ((float)random(-10, 10) / 10.0));
-    delay(50);
-    sendCustom2Properties();
-  }
-
-  twai_message_t message;
-  if (twai_receive(&message, pdMS_TO_TICKS(1000)) == ESP_OK)
-  {
-    if (!(message.rtr))
+    if (canBus.readStatus())
     {
-      BT.writeCANMessage(message.identifier, message.data, message.data_length_code);
-      console.setVerboseLogging(false);
+      if(state.getBool("fuel")) {
+        sendCustomEngineProperties();        
+        delay(150);
+      }
+
+      if(state.getBool("battery")) {    
+        sendBatteryLevels(1, 12 + ((float)random(-10, 10) / 10.0));
+        delay(150);
+        sendBatteryLevels(2, 12 + ((float)random(-10, 10) / 10.0));
+        delay(150);
+        sendBatteryLevels(3, 12 + ((float)random(-10, 10) / 10.0));
+        delay(150);
+        sendBatteryLevels(4, 12 + ((float)random(-10, 10) / 10.0));
+        delay(150);
+        sendBatteryLevels(5, 12 + ((float)random(-10, 10) / 10.0));
+        delay(150);
+      }
+
+      if(state.getBool("cooling"))
+        sendCustom2Properties();
     }
   }
+
+  canBus.loop();
 
   /*
 
