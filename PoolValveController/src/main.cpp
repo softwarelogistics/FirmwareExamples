@@ -26,7 +26,7 @@
 //#include <uri/UriRegex.h>
 
 #define FW_SKU "PLVL001"
-#define FIRMWARE_VERSION "0.6.5"
+#define FIRMWARE_VERSION "0.6.6"
 #define HARDWARE_REVISION "COT-01"
 
 const char *host = "pool-valves";
