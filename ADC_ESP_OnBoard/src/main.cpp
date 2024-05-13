@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <NuvIoT.h>
 
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.0.1"
 #define EXAMPLE_SKU "ESP32 Onboard ADC Example"
 
 void setup() {
