@@ -26,7 +26,7 @@
 //#include <uri/UriRegex.h>
 
 #define FW_SKU "PLVL001"
-#define FIRMWARE_VERSION "0.6.6"
+#define FIRMWARE_VERSION "0.8.1"
 #define HARDWARE_REVISION "COT-01"
 
 const char *host = "pool-valves";
@@ -35,9 +35,9 @@ const char *password = "TheWolfBytes";
 
 // GPIO32, GPIO33, GPIO25, GPIO26, GPIO27, GPIO14, GPIO12 and GPIO13.
 
-Valve jets(&console, &relayManager, &onOffDetector, 0, 1, 0, "spa", "both", "normal");
-Valve source(&console, &relayManager, &onOffDetector, 2, 3, 1, "pool", "both", "spa");
-Valve output(&console, &relayManager, &onOffDetector, 4, 5, 2, "pool", "both", "spa");
+Valve jets(&console, &relayManager, &state, &onOffDetector, "jets", 0, 1, 0, "spa", "both", "normal");
+Valve source(&console, &relayManager, &state, &onOffDetector, "source", 2, 3, 1, "pool", "both", "spa");
+Valve output(&console, &relayManager, &state, &onOffDetector, "output", 4, 5, 2, "pool", "both", "spa");
 
 WebServer *httpServer = new WebServer(80);
 
@@ -83,6 +83,30 @@ void handleTopic(String device, String action)
     jets.setCurrentPosition(currentPosition_0);
   if (device == "spa" && action == "reset")    
     jets.reset();
+}
+
+void commandHandler(String topic, byte *buffer, size_t len){
+  if(topic == "pool") {
+    source.setCurrentPosition(currentPosition_0);
+    output.setCurrentPosition(currentPosition_0);
+  }
+  else if(topic == "spa") {
+    source.setCurrentPosition(currentPosition_180);
+    output.setCurrentPosition(currentPosition_180);
+    jets.setCurrentPosition(currentPosition_90);
+  }
+  else if(topic == "poolandspa") {
+    source.setCurrentPosition(currentPosition_90);
+    output.setCurrentPosition(currentPosition_90);
+    jets.setCurrentPosition(currentPosition_180);
+  }
+  else if(topic == "calibrate") {
+    source.calibrate();
+    output.calibrate();
+    jets.calibrate();
+  }
+
+  console.println("Command Received: " + topic); 
 }
 
 void handleSetTiming(String port, String timing)
@@ -234,6 +258,9 @@ void initTimings() {
   EEPROM.end();
 }
 
+
+
+
 void setup(void)
 {
   delay(1000);
@@ -292,8 +319,13 @@ void setup(void)
   onOffDetector.setup(&ioConfig);
 
   initTimings();  
+  jets.init();
+  source.init();
+  output.init();
 
   wifiMgr.setup();
+
+  setCommandHandler(commandHandler);
 }
 
 void loop(void)

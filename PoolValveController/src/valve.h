@@ -5,6 +5,7 @@
 #include <RelayManager.h>
 #include <OnOffDetector.h>
 #include <Console.h>
+#include <NuvIoTState.h>
 
 typedef enum currentPosition
 {
@@ -32,6 +33,8 @@ private:
     RelayManager *m_relayMgr;
     OnOffDetector *m_onOffDetector;
     Console *m_console;
+    NuvIoTState *m_state;
+    String m_name;
 
 private:
     currentPosition_t m_currentPosition;
@@ -76,15 +79,18 @@ private:
     }
 
 public:
-    Valve(Console *console, RelayManager *mgr, OnOffDetector *detector, int powerPin, int dirPin, int centerIndex, String pos0Name, String pos90Name, String pos180Name)
+    Valve(Console *console, RelayManager *mgr, NuvIoTState *state, OnOffDetector *detector, String name, int powerPin, int dirPin, int centerIndex, String pos0Name, String pos90Name, String pos180Name)
     {
         m_pos0Name = pos0Name;
         m_pos90Name = pos90Name;
         m_pos180Name = pos180Name;
 
+        m_name = name;
+
         m_currentPosition = currentPosition_unknown;
         m_nextPosition = currentPosition_unknown;
 
+        m_state = state;
         m_relayMgr = mgr;
         m_onOffDetector = detector;
         m_console = console;
@@ -94,11 +100,21 @@ public:
         m_powerPin = powerPin;
         m_dirPin = dirPin;
         m_centerIndex = centerIndex;
+
+    }
+
+    void init() {
+        m_state->registerInt((m_name + "state").c_str(), currentPosition_unknown);
+        m_state->registerInt((m_name + "ms").c_str(), 20000);
+
+        m_currentPosition = (currentPosition_t)m_state->getInt((m_name + "state").c_str());
+        m_move90_ms = m_state->getInt((m_name + "ms").c_str());
     }
 
     void setTiming(uint16_t timing)
     {
         m_move90_ms = timing;
+        m_state->registerInt((m_name + "ms").c_str(), 20000);
     }
 
     uint16_t getTiming()
@@ -138,6 +154,11 @@ public:
         currentPosition_t lastPosition = m_currentPosition;
         m_currentPosition = currentPosition_unknown;
         setCurrentPosition(lastPosition);
+    }
+
+    void calibrate() {
+        setValve(moveDirection_ccw, m_move90_ms * 2);
+        m_nextPosition = currentPosition_0;
     }
 
     void setCurrentPosition(currentPosition_t nextPosition)
@@ -198,6 +219,8 @@ public:
                 break;
             }
         }
+
+        m_state->setInt((m_name + "state").c_str(), (int32_t)nextPosition);
     }
 
     bool getIsMoving()

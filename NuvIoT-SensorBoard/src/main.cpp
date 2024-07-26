@@ -8,7 +8,7 @@
 #include <NuvIoTSensors.h>
 
 #define TEMP_SNSR_SKU "RSB-01"
-#define FIRMWARE_VERSION "0.9.2"
+#define FIRMWARE_VERSION "0.9.25"
 #define HARDWARE_REVISION "4.0"
 
 #define BATT_SENSE_PIN 34
@@ -29,8 +29,7 @@ void setup()
 
   ioConfig.load();
   sysConfig.load();
-  sysConfig.setDefaults();
-  sysConfig.SendUpdateRate = 1000;
+  sysConfig.SendUpdateRate = 15000;
 
   state.init(TEMP_SNSR_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
   
