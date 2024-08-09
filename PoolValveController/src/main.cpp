@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 #include <NuvIoT.h>
-#include <WebServer.h>
+//#include <WebServer.h>
 #include <StringSplitter.h>
 
 #include "EEPROM.h"
@@ -26,7 +26,7 @@
 //#include <uri/UriRegex.h>
 
 #define FW_SKU "PLVL001"
-#define FIRMWARE_VERSION "0.8.1"
+#define FIRMWARE_VERSION "0.8.2"
 #define HARDWARE_REVISION "COT-01"
 
 const char *host = "pool-valves";
@@ -39,19 +39,13 @@ Valve jets(&console, &relayManager, &state, &onOffDetector, "jets", 0, 1, 0, "sp
 Valve source(&console, &relayManager, &state, &onOffDetector, "source", 2, 3, 1, "pool", "both", "spa");
 Valve output(&console, &relayManager, &state, &onOffDetector, "output", 4, 5, 2, "pool", "both", "spa");
 
-WebServer *httpServer = new WebServer(80);
-
 bool webServerSetup = false;
 
 const int MOTOR_TEMP = A0;
 
 unsigned long next_send = 0;
 
-void redirectToValvesPage()
-{
-  httpServer->sendHeader("Location", String("/valves"), true);
-  httpServer->send(302, "text/plain");
-}
+
 
 void handleTopic(String device, String action)
 {
@@ -93,12 +87,15 @@ void commandHandler(String topic, byte *buffer, size_t len){
   else if(topic == "spa") {
     source.setCurrentPosition(currentPosition_180);
     output.setCurrentPosition(currentPosition_180);
-    jets.setCurrentPosition(currentPosition_90);
+    jets.setCurrentPosition(currentPosition_180);
   }
   else if(topic == "poolandspa") {
-    source.setCurrentPosition(currentPosition_90);
+    source.setCurrentPosition(currentPosition_180);
     output.setCurrentPosition(currentPosition_90);
     jets.setCurrentPosition(currentPosition_180);
+  }
+  else if(topic == "jets") {
+    jets.setCurrentPosition(currentPosition_0);
   }
   else if(topic == "calibrate") {
     source.calibrate();
@@ -132,7 +129,7 @@ void handleSetTiming(String port, String timing)
   EEPROM.end();
 }
 
-
+/*
 class PoolPageHandler : public RequestHandler
 {
   bool canHandle(HTTPMethod method, String uri)
@@ -215,6 +212,8 @@ class PoolPageHandler : public RequestHandler
   }
 } pageHandler;
 
+
+
 void handleRoot()
 {
   httpServer->send(200, "text/plain", "hello from esp8266!");
@@ -225,7 +224,7 @@ void setupWebServer()
   httpServer->addHandler(&pageHandler);
   httpServer->begin();
   webServerSetup = true;
-}
+}*/
 
 void initTimings() {
   EEPROM.begin(12);
@@ -257,7 +256,6 @@ void initTimings() {
 
   EEPROM.end();
 }
-
 
 
 
@@ -341,15 +339,15 @@ void loop(void)
 
   commonLoop();
 
-  if (wifiMgr.isConnected())
-  {
-    if (!webServerSetup)
-    {
-      setupWebServer();
-    }
+  // if (wifiMgr.isConnected())
+  // {
+  //   if (!webServerSetup)
+  //   {
+  //     setupWebServer();
+  //   }
 
-    httpServer->handleClient();
-  }
+  //   httpServer->handleClient();
+  // }
 
   if (next_send < millis())
   {

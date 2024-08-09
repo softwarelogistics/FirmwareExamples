@@ -146,6 +146,8 @@ public:
                 break;
             }
         }
+
+        return "?";
     }
 
     currentPosition_t getCurrentPosition() { return m_currentPosition; }
