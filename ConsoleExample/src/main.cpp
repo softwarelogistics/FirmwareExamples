@@ -29,8 +29,8 @@ void cmdCallback(String cmd){
 void setup(){
   initPins();
 
-  ledManager.setup(&ioConfig);
-  ledManager.beep(20);
+//  ledManager.setup(&ioConfig);
+//  ledManager.beep(20);
 
   configureConsole();
   console.registerCallback(cmdCallback);
@@ -74,4 +74,4 @@ void loop(){
   // If your app gets into a state where it can't recover and you don't want to do a restart,
   // call this method continually to write output to the console.
   // console.repeatFatalError("unrocoverable error.");
-}
+} 
