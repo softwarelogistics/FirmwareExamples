@@ -17,10 +17,6 @@
 #define IO1_PIN 25
 #define IO2_PIN 26
 
-byte buffer[8];
-bool running = true;
-
-
 void setup()
 {
   delay(1000);
@@ -72,5 +68,6 @@ void loop(){
 
   console.setVerboseLogging(true);
   probes.debugPrint();
+  console.setVerboseLogging(false);
   delay(1000);
 }
