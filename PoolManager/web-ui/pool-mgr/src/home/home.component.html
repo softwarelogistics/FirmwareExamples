@@ -1,0 +1,41 @@
+<div style="margin: 40px;width:480px">
+  <h4>Welcome to Pool State <i class="action fa fa-refresh" (click)="refresh()" aria-hidden="true"></i>
+    </h4>
+
+  <div *ngIf="poolState">
+    <div>
+      <h4>Input Temperature: {{poolState.in}}</h4>
+      <h4>Output Temperature: {{poolState.out}}</h4>
+      <h4>Heating: {{poolState.in ? 'True' : 'False'}}</h4>
+      <h4>Low Pressure: {{poolState.lowPressure}}</h4>
+      <h4>Flow: {{poolState.flow}}</h4>
+      <h4>High Pressure: {{poolState.highPressure}}</h4>
+    </div>
+      
+    <div class="form-group">
+      <label>Pool SetPoint</label>
+      <div style="display:flex">
+        <input  class="form-control" [(ngModel)]="poolState.poolSetPoint" />
+        <i class="action fa fa-save save-icon" (click)="setSetPoint('pool', poolState.poolSetPoint)" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Spa SetPoint</label>
+      <div style="display:flex">
+        <input  class="form-control" [(ngModel)]="poolState.spaSetPoint" />
+        <i class="action fa fa-save save-icon" (click)="setSetPoint('spa', poolState.spaSetPoint)" aria-hidden="true"></i>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Pool Mode</label>
+      <span> {{poolState.poolMode}}</span> 
+      <div>
+        <button class="mode-button btn btn-primary" (click)="setMode('off')">Off</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('pool')">Pool</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('spa')">Spa</button>
+      </div>
+
+    </div>
+  </div>
+</div>
