@@ -6,6 +6,8 @@
 #include <OnOffDetector.h>
 #include <Console.h>
 #include <NuvIoTState.h>
+#include <WebSocketsServer.h>
+
 
 typedef enum currentPosition
 {
@@ -31,6 +33,7 @@ private:
     bool m_isMoving = false;
 
     RelayManager *m_relayMgr;
+    WebSocketsServer *m_webSocket;
     OnOffDetector *m_onOffDetector;
     Console *m_console;
     NuvIoTState *m_state;
@@ -40,47 +43,44 @@ private:
     currentPosition_t m_currentPosition;
     currentPosition_t m_nextPosition;
 
-    typedef enum moveDirection
-    {
+    typedef enum moveDirection{
         moveDirection_off,
         moveDirection_cw,
         moveDirection_ccw,
     } moveDirection_t;
 
-    void setValve(moveDirection_t angle, long duration)
-    {
-        switch (angle)
-        {
-        case moveDirection_off:
-            m_console->print("OFF ");
-            break;
-        case moveDirection_cw:
-            m_console->print("CW ");
-            break;
-        case moveDirection_ccw:
-            m_console->print("CCW ");
-            break;
+    void setValve(moveDirection_t angle, long duration){
+        switch (angle){
+            case moveDirection_off:
+                m_console->print("OFF ");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_name + "\",\"state\":\"off\"}");
+                break;
+            case moveDirection_cw:
+                m_console->print("CW ");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_name + "\",\"state\":\"cw\",\"duration\":" + String(duration) + "}");
+                break;
+            case moveDirection_ccw:
+                m_console->print("CCW ");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_name + "\",\"state\":\"ccw\",\"duration\":" + String(duration) + "}");
+                break;
         }
 
         m_relayMgr->setRelay(m_powerPin, angle != moveDirection_off ? true : false);
         m_relayMgr->setRelay(m_dirPin, angle == moveDirection_cw ? true : false);
 
-        if (duration > 0)
-        {
+        if (duration > 0){
             m_nextTimeout = duration + millis();
             m_console->println("Timeout: " + String(duration) + " " + String(m_nextTimeout));
             m_isMoving = true;
         }
-        else
-        {
+        else{
             m_isMoving = false;
             m_console->println("Timeout: 0");
         }
     }
 
 public:
-    Valve(Console *console, RelayManager *mgr, NuvIoTState *state, OnOffDetector *detector, String name, int powerPin, int dirPin, int centerIndex, String pos0Name, String pos90Name, String pos180Name)
-    {
+    Valve(Console *console, RelayManager *mgr, NuvIoTState *state, OnOffDetector *detector, WebSocketsServer *webSocket, String name, int powerPin, int dirPin, int centerIndex, String pos0Name, String pos90Name, String pos180Name){
         m_pos0Name = pos0Name;
         m_pos90Name = pos90Name;
         m_pos180Name = pos180Name;
@@ -94,6 +94,7 @@ public:
         m_relayMgr = mgr;
         m_onOffDetector = detector;
         m_console = console;
+        m_webSocket = webSocket;
 
         m_nextTimeout = 0;
 

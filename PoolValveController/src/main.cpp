@@ -1,20 +1,22 @@
+#define ARDUHAL_LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE
+
 #define ESP32_Relay_X8
 #define BT_ENABLED
 #include <Arduino.h>
 
 #include <ESPmDNS.h>
 #include <NuvIoT.h>
-#include <StringSplitter.h>
 
 #include "EEPROM.h"
 
 #include "valve.h"
-#include "pages.h"
 #include <WebSocketsServer.h>
+#include <WebServer.h>
 
+#define DEFAULT_DEVICE_TYPE_ID "272EC811A9074F8C8CA72D2EAB7D3B44"
 
 WebServer *webServer = new WebServer(80);
-WebSocketsServer webSocket = WebSocketsServer(81);
+WebSocketsServer *webSocket = new WebSocketsServer(81);
 
 
 // Programming Interface
@@ -39,11 +41,11 @@ const char *host = "pool-valves";
 const char *ssid = "CasaDeWolf";
 const char *password = "TheWolfBytes";
 
-#define homePage  "<!doctype html>\
+String homePage  = "<!doctype html>\
 <html lang=\"en\" >\
 <head>\
   <meta charset=\"utf-8\">\
-  <title>PoolMgr</title>\
+  <title>Pool Valve Controller</title>\
   <base href=\"/\">\
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
   <link rel=\"icon\" type=\"image/png\" href=\"https://www.nuviot.com/images/nuviotico.png\">\
@@ -52,23 +54,23 @@ const char *password = "TheWolfBytes";
   <script src=\"https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js\" integrity=\"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49\" crossorigin=\"anonymous\"></script>\
   <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\">\
   <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js\" integrity=\"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy\" crossorigin=\"anonymous\"></script>\
-  <link rel=\"stylesheet\" href=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-valves/styles.css\"></head>\
+  <link rel=\"stylesheet\" href=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/styles.css\"></head>\
   <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\">\
   <link href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap\" rel=\"stylesheet\">\
   <link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\">\
   <script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyCAfoq8E_G7iXNmOlNxxa74OPVKyqBAq18\"></script>\
 <body>\
   <app-root></app-root>\
-  <script src=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-valves/polyfills.js\" type=\"module\"></script>\
-  <script src=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-valves/main.js\" type=\"module\"></script>\
+  <script src=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/polyfills.js\" type=\"module\"></script>\
+  <script src=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/main.js\" type=\"module\"></script>\
 </body>\
-</html>"
+</html>";
 
 // GPIO32, GPIO33, GPIO25, GPIO26, GPIO27, GPIO14, GPIO12 and GPIO13.
 
-Valve jets(&console, &relayManager, &state, &onOffDetector, "jets", 0, 1, 0, "spa", "both", "normal");
-Valve source(&console, &relayManager, &state, &onOffDetector, "source", 2, 3, 1, "pool", "both", "spa");
-Valve output(&console, &relayManager, &state, &onOffDetector, "output", 4, 5, 2, "pool", "both", "spa");
+Valve jets(&console, &relayManager, &state, &onOffDetector, webSocket, "jets", 0, 1, 0, "spa", "both", "normal");
+Valve source(&console, &relayManager, &state, &onOffDetector, webSocket, "source", 2, 3, 1, "pool", "both", "spa");
+Valve output(&console, &relayManager, &state, &onOffDetector, webSocket, "output", 4, 5, 2, "pool", "both", "spa");
 
 bool webServerSetup = false;
 
@@ -108,33 +110,34 @@ void handleTopic(String device, String action)
     jets.reset();
 }
 
-void commandHandler(String topic, byte *buffer, size_t len){
-  if(topic == "pool") {
+void setMode(String mode) { 
+  if(mode == "pool") {
     source.setCurrentPosition(currentPosition_0);
     output.setCurrentPosition(currentPosition_0);
   }
-  else if(topic == "spa") {
+  else if(mode == "spa") {
     source.setCurrentPosition(currentPosition_180);
     output.setCurrentPosition(currentPosition_180);
     jets.setCurrentPosition(currentPosition_180);
   }
-  else if(topic == "poolandspa") {
+  else if(mode == "poolandspa") {
     source.setCurrentPosition(currentPosition_180);
     output.setCurrentPosition(currentPosition_90);
     jets.setCurrentPosition(currentPosition_180);
   }
-  else if(topic == "jets") {
+  else if(mode == "jets") {
     jets.setCurrentPosition(currentPosition_0);
   }
-  else if(topic == "calibrate") {
+  else if(mode == "calibrate") {
     source.calibrate();
     output.calibrate();
     jets.calibrate();
   }
-
-  console.println("Command Received: " + topic); 
 }
 
+void commandHandler(String topic, byte *buffer, size_t len){
+  setMode(topic);
+}
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
 
@@ -142,12 +145,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         case WStype_DISCONNECTED:
 
             break;
-        case WStype_CONNECTED:
-            {
-                IPAddress ip = webSocket.remoteIP(num);
-    
-		        webSocket.sendTXT(num, "{\"connect\":true}");
-                console.print("client web connected"); 
+        case WStype_CONNECTED:{
+    	        webSocket->sendTXT(num, "{\"messageId\":\"connect\",\"deviceId\":\"" + sysConfig.DeviceId + "\",\"id\":\"" + sysConfig.Id + "\",\"deviceType\":\"" + sysConfig.DeviceTypeId + "\",\"orgId\":\"" + sysConfig.OrgId +  "\",\"repoId\":\"" + sysConfig.RepoId + "\",\"customerId\":\"" + sysConfig.CustomerId + "\"}");
+              console.print("client web connected"); 
             }
             break;
         case WStype_TEXT:
@@ -173,88 +173,79 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 
-void handleSetTiming(String port, String timing)
-{
+void handleSetTiming(String port, String timing){
   EEPROM.begin(12);
   uint16_t newTiming = atoi(timing.c_str()) * 1000;
 
-  if (port == "source")
-  {
+  if (port == "source"){
     source.setTiming(newTiming);
     EEPROM.put(sizeof(uint16_t), newTiming);
   }
-  else if (port == "output")
-  {
+  else if (port == "output"){
     output.setTiming(newTiming);
     EEPROM.put(sizeof(uint16_t) * 2, newTiming);
   }
-  else if (port == "jets")
-  {
+  else if (port == "jets"){
     jets.setTiming(newTiming);
     EEPROM.put(sizeof(uint16_t) * 4, newTiming);
   }
+  else if(port == "all"){
+    source.setTiming(newTiming);
+    output.setTiming(newTiming);
+    jets.setTiming(newTiming);
+    EEPROM.put(sizeof(uint16_t), newTiming);
+    EEPROM.put(sizeof(uint16_t) * 2, newTiming);
+    EEPROM.put(sizeof(uint16_t) * 4, newTiming);
+  }
+  else{
+    console.println("Invalid port: " + port);
+  }
+
   EEPROM.end();
 }
 
 
-String getJSONState()
-{
-    String json = "{\"deviceId\":\"" + String(sysConfig.DeviceId) + "\",\"ipaddress\":\"" + WiFi.localIP().toString() + "\",\"source\":\"" + source.getStatus() + "\",\"output\":\"" + output.getStatus() + "\",\"spa\":\"" + jets.getStatus() + "\"}";
-    return json;
+String getJSONState(){
+    return "{\"messageId\":\"state\",\"ipaddress\":\"" + WiFi.localIP().toString() + "\",\"source\":\"" + source.getStatus() + "\",\"output\":\"" + output.getStatus() + "\",\"spa\":\"" + jets.getStatus() + "\"" + 
+            ",\"sourceTiming\":" + String(source.getTiming()) + ",\"jetsTiming\":" + String(jets.getTiming()) + ",\"outputTiming\":" + String(output.getTiming()) + "}";
 } 
 
 void setupWebServer(){
 
-    webSocket.begin();
-    webSocket.onEvent(webSocketEvent);
+    webSocket->begin();
+    webSocket->onEvent(webSocketEvent);
 
     webServer->enableCORS(true);
     webServer->on("/api/state", HTTP_GET, []() {
-     //   webServer->sendHeader("Access-Control-Allow-Origin", "*");
         webServer->send(200, "application/json", getJSONState());
     });
 
-    webServer->on("/api/mode/off", HTTP_GET, []() {
-        webServer->send(200, "application/json", getJSONState());
-    });
- 
-    webServer->on("/api/mode/pool", HTTP_GET, []() {
-        webServer->send(200, "application/json", getJSONState());
-    });
-
-    webServer->on("/api/mode/spa", HTTP_GET, []() {
-        webServer->send(200, "application/json", getJSONState());
-    });
 
     webServer->onNotFound([]() {
         String uri = webServer->uri();
-       /* if (uri.startsWith("/api/setpoint/pool")) {
-            String valueStr = uri.substring(strlen("/api/setpoint/pool/"));
-            float setpoint = valueStr.toFloat();    
-            if(setpoint > 60 && setpoint < 110) {
-                poolSetPoint = setpoint;
-                state.updateProperty("Decimal", "poolsetpoint", String(poolSetPoint));
-                webServer->send(200, "application/json", getJSONState());
-            }
-            else {
-                webServer->send(400, "application/json", "{\"error\":\"Invalid setpoint\"}");
-            }
-        } else if (uri.startsWith("/api/setpoint/spa")) {
-           String valueStr = uri.substring(strlen("/api/setpoint/spa/"));
-            float setpoint = valueStr.toFloat();    
-            if(setpoint > 60 && setpoint < 110) {
-                spaSetPoint = setpoint;
-                state.updateProperty("Decimal", "hottubsetpoint", String(spaSetPoint));
-                webServer->send(200, "application/json", getJSONState());
-            }
-            else {
-                webServer->send(400, "application/json", "{\"error\":\"Invalid setpoint\"}");
-            }
+        if (uri.startsWith("/api/valve")) {
+            String valueStr = uri.substring(strlen("/api/valve/"));
+            String valve = valueStr.substring(0, valueStr.indexOf('/'));
+            String action = valueStr.substring(valueStr.indexOf('/') + 1);
+            console.println("valve: " + valve + ", " + action);
+            handleTopic(valve, action);
+            webServer->send(200, "application/json", getJSONState());
         }
-        else
-        {*/
+        if (uri.startsWith("/api/mode")) {
+            String mode = uri.substring(strlen("/api/mode/"));
+            setMode(mode);
+            webServer->send(200, "application/json", getJSONState());
+        }
+        else if(uri.startsWith("/api/timing")) {
+            String valueStr = uri.substring(strlen("/api/timing/"));
+            String port = valueStr.substring(0, valueStr.indexOf('/'));
+            String timing = valueStr.substring(valueStr.indexOf('/') + 1);
+            handleSetTiming(port, timing);
+            webServer->send(200, "application/json", getJSONState());
+        }
+        else{
             webServer->send(200, "text/html", homePage);
-        //}
+        }
     });
 
     webServer->begin();
@@ -293,8 +284,6 @@ void initTimings() {
   EEPROM.end();
 }
 
-
-
 void setup(void)
 {
   delay(1000);
@@ -308,8 +297,16 @@ void setup(void)
 
   ioConfig.load();
   sysConfig.load();
-  sysConfig.WiFiEnabled = true;
-  sysConfig.SendUpdateRateMS = 5000;
+
+  if(sysConfig.DeviceTypeId == NULL || sysConfig.DeviceTypeId == ""){
+      sysConfig.DeviceTypeId = DEFAULT_DEVICE_TYPE_ID;
+      sysConfig.write();
+  }
+  
+  if(sysConfig.SendUpdateRateMS > 5000){
+    sysConfig.SendUpdateRateMS = 5000;
+    sysConfig.write();
+  }
 
   String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Valve Ctrlr" : sysConfig.DeviceId);
   BT.begin(btName.c_str(), FW_SKU);
@@ -362,10 +359,7 @@ void setup(void)
   setCommandHandler(commandHandler);
 }
 
-void loop(void)
-{
-  int motorTempCount = analogRead(A0);
-
+void loop(void){
   jets.Update();
   source.Update();
   output.Update();
@@ -374,8 +368,6 @@ void loop(void)
   onOffDetector.loop();
 
   commonLoop();
-
-  
     if (wifiMgr.isConnected())
     {
         if (!webServerSetup)
@@ -392,14 +384,18 @@ void loop(void)
         }
 
         webServer->handleClient();
-        webSocket.loop();
+        webSocket->loop();
     }
 
-  if (next_send < millis())
-  {
-    String topic = "pool/valvestat/" + String(sysConfig.DeviceId);
-    mqttPublish(topic, getJSONState());
-    console.println(getJSONState());
+  if (next_send < millis()){
     next_send = millis() + sysConfig.SendUpdateRateMS;
+    String json = getJSONState();
+    if(wifiMQTT.isConnected()){
+      String topic = "pool/valvestat/" + String(sysConfig.DeviceId);
+      mqttPublish(topic, getJSONState());
+    }
+    
+    webSocket->broadcastTXT(json);
+    console.println(json);
   }
 }

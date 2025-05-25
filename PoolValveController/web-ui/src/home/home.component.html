@@ -1,41 +1,70 @@
-<div style="margin: 40px;width:480px">
-  <h4>Welcome to Pool State <i class="action fa fa-refresh" (click)="refresh()" aria-hidden="true"></i>
-    </h4>
+<div style="margin: 20px;width:420px">
+  <div style="text-align: center;">
+  <img src="https://nuviot.blob.core.windows.net/cdn/nuviot-blue.png" alt="Nuviot Logo" style="width: 300px; height: auto; margin-bottom: 20px;" />
+  </div>
+  <div *ngIf="state">
+    <div class="stats">
 
-  <div *ngIf="poolState">
-    <div>
-      <h4>Input Temperature: {{poolState.in}}</h4>
-      <h4>Output Temperature: {{poolState.out}}</h4>
-      <h4>Heating: {{poolState.in ? 'True' : 'False'}}</h4>
-      <h4>Low Pressure: {{poolState.lowPressure}}</h4>
-      <h4>Flow: {{poolState.flow}}</h4>
-      <h4>High Pressure: {{poolState.highPressure}}</h4>
-    </div>
-      
-    <div class="form-group">
-      <label>Pool SetPoint</label>
-      <div style="display:flex">
-        <input  class="form-control" [(ngModel)]="poolState.poolSetPoint" />
-        <i class="action fa fa-save save-icon" (click)="setSetPoint('pool', poolState.poolSetPoint)" aria-hidden="true"></i>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Spa SetPoint</label>
-      <div style="display:flex">
-        <input  class="form-control" [(ngModel)]="poolState.spaSetPoint" />
-        <i class="action fa fa-save save-icon" (click)="setSetPoint('spa', poolState.spaSetPoint)" aria-hidden="true"></i>
-      </div>
-    </div>
-    
-    <div class="form-group">
-      <label>Pool Mode</label>
-      <span> {{poolState.poolMode}}</span> 
       <div>
-        <button class="mode-button btn btn-primary" (click)="setMode('off')">Off</button>
-        <button class="mode-button btn btn-primary" (click)="setMode('pool')">Pool</button>
-        <button class="mode-button btn btn-primary" (click)="setMode('spa')">Spa</button>
+        <label>Source:</label>
+        <span> {{state.source}}</span> 
+      </div>
+      <div class="function-row">  
+        <button class="mode-button btn btn-primary" (click)="setMode('source', 'pool')">Pool</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('source', 'spa')">Spa</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('source', 'both')">Both</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('source', 'reset')">Reset</button>
       </div>
 
+      <div>
+        <label>Output:</label>
+        <span> {{state.output}}</span> 
+      </div>
+      <div class="function-row">  
+        <button class="mode-button btn btn-primary" (click)="setMode('output', 'pool')">Pool</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('output', 'spa')">Spa</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('output', 'both')">Both</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('output', 'reset')">Reset</button>
+      </div>
+    
+      <div>
+        <label>Spa:</label>
+        <span> {{state.spa}}</span> 
+      </div>
+      <div class="function-row">  
+        <button class="mode-button btn btn-primary" (click)="setMode('spa', 'normal')">Normal</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('spa', 'spa')">Spa</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('spa', 'both')">Both</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('spa', 'reset')">Reset</button>
+      </div>
+      
     </div>
+    <hr />
+      
+    <div class="input-row">
+      <label>Source Timing:</label>
+      <div style="display:flex">
+        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label>Output Timing:</label>
+      <div style="display:flex">
+        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label>Jets Timing:</label>
+      <div style="display:flex">
+        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+      </div>
+    </div>
+    <hr />
+    <h4>Refresh <i class="action fa fa-refresh" (click)="refresh()" aria-hidden="true"></i>  </h4>
   </div>
 </div>

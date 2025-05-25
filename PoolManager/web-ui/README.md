@@ -2,6 +2,6 @@
 
 To publish:
 ng build --output-hashing none
-Go to the Pool Device Model in NuvIoT.
+Go to the Pool Valve Manager Device Model in NuvIoT.
 
-Upload the main.js, styles.css and polyfills.js from the /dist/pool-mgr/browser folder
+Upload the main.js, styles.css and polyfills.js from the /dist/pool-valve-mgr/browser folder

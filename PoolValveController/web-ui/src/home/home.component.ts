@@ -4,17 +4,32 @@ import { Form, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { environment } from '../environments/environment';
 
-interface PoolState {
-  err: string;
-  flow: string;
-  heating: boolean;
-  in: number;
-  out: number;
-  poolMode: string;
-  lowPressure: string;
-  highPressure: string;
-  poolSetPoint: number;
-  spaSetPoint: number;
+interface State {
+  source: string;
+  output: string;
+  spa: string;
+  sourceTiming: number;
+  outputTiming: number;
+  jetsTiming: number;
+}
+
+interface Message {
+  messageId: string;
+}
+
+interface ValveState {
+  valve: string;
+  state: string;
+  duration?: number;
+}
+
+interface ConnectMessage {
+  deviceId: string;
+  id: string;
+  deviceType: string;
+  orgId: string;
+  repoId: string;
+  customerId?: string
 }
 
 //ng build --output-hashing none
@@ -35,7 +50,9 @@ throw new Error('Method not implemented.');
 
   ws: WebSocket | undefined;
 
-  poolState?: PoolState;
+  state?: State;
+  valveState?: ValveState;
+  config?: ConnectMessage;
 
   constructor(private http: HttpClient) { }
 
@@ -55,7 +72,24 @@ throw new Error('Method not implemented.');
     };
 
     this.ws.onmessage = (event) => {
-      console.log(event.data);
+      let obj = JSON.parse(event.data) as Message;
+
+      switch(obj.messageId) {
+        case 'valveState':
+          this.valveState = JSON.parse(event.data) as ValveState;
+          console.log(this.valveState);
+          break;
+        case 'connect':
+          this.config = JSON.parse(event.data) as ConnectMessage;
+          console.log(this.config);
+          break;
+        case 'state':
+          this.state = JSON.parse(event.data) as State;
+          console.log(this.state);
+          break;
+        default:
+          console.log('Unknown message type');
+      }
     };
 
     this.ws.onclose = (event) => {
@@ -65,15 +99,17 @@ throw new Error('Method not implemented.');
   }
 
   async refresh() {
-    this.poolState = await this.http.get(`${environment.apiRoot}/api/state`).toPromise() as PoolState;
-    console.log(this.poolState);
+    this.state = await this.http.get(`${environment.apiRoot}/api/state`).toPromise() as State;
+    console.log(this.state);
   }
 
-  async setMode(mode: string) {
-    this.poolState = await this.http.get(`${environment.apiRoot}/api/mode/${mode}`).toPromise() as PoolState;
+  async setMode(valve: string, action: string) {
+    this.state = await this.http.get(`${environment.apiRoot}/api/valve/${valve}/${action}`).toPromise() as State;
+    console.log(this.state);
   }
   
-  async setSetPoint(mode: string, setpoint: number) {
-    this.poolState = await this.http.get(`${environment.apiRoot}/api/setpoint/${mode}/${setpoint}`).toPromise() as PoolState;
+  async setTiming(valve: string, timing: number) {
+    this.state = await this.http.get(`${environment.apiRoot}/api/timing/${valve}/${timing}`).toPromise() as State;
+    console.log(this.state);
   }
 }

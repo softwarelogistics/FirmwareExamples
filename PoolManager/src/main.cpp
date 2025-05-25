@@ -13,18 +13,15 @@
 #include <NuvIoT.h>
 #include <MedianFilter.h>
 #include <WebSocketsServer.h>
-
+#include <WebServer.h>
 #include <uri/UriRegex.h>
 
-#define FIRMWARE_VERSION "3.5.3"
+#define FIRMWARE_VERSION "4.0.0"
 #define HARDWARE_REVISION "5"
 #define FW_SKU "POOL001"
 #define DEFAULT_DEVICE_TYPE_ID "B777D72BE8824809A9919AB0D4EF8684"
 
-#include <PageHandler.h>
-
 boolean _shouldHeat = false;
-
 
 String _lastError = "none";
 double temperatureIn = -1;
@@ -75,9 +72,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             break;
         case WStype_CONNECTED:
             {
-                IPAddress ip = webSocket.remoteIP(num);
-    
-		        webSocket.sendTXT(num, "{\"connect\":true,\"deviceId\":\"" + sysConfig.DeviceId + 
+    	        webSocket.sendTXT(num, "{\"connect\":true,\"deviceId\":\"" + sysConfig.DeviceId + 
                     "\",\"id\":\"" + sysConfig.Id +
                     "\",\"deviceType\":\"" + sysConfig.DeviceTypeId + 
                     "\",\"orgId\":\"" + sysConfig.OrgId + 
@@ -107,16 +102,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 	case WStype_FRAGMENT_FIN:
 	    break;
     }
-}
-
-void redirectToSensorPage()
-{
-    webServer->sendHeader("Location", String("/sensor"), true);
-    webServer->send(302, "text/plain");
-}
-
-void handleTopic(String topic)
-{
 }
 
 #define HEATER_MODE_OFF 0
@@ -153,11 +138,11 @@ void setup()
     ioConfig.GPIO2Config = GPIO_CONFIG_DBS18;
     ioConfig.GPIO2Name = "temperatureOut";
 
-    ioConfig.GPIO1Config = GPIO_CONFIG_NONE;
-    ioConfig.GPIO1Name = "temperatureIn";
+    // ioConfig.GPIO1Config = GPIO_CONFIG_NONE;
+    // ioConfig.GPIO1Name = "temperatureIn";
 
-    ioConfig.GPIO2Config = GPIO_CONFIG_NONE;
-    ioConfig.GPIO2Name = "temperatureOut";
+    // ioConfig.GPIO2Config = GPIO_CONFIG_NONE;
+    // ioConfig.GPIO2Name = "temperatureOut";
 
     ioConfig.GPIO6Config = GPIO_CONFIG_INPUT;
     ioConfig.GPIO6Name = "lowpressure";
