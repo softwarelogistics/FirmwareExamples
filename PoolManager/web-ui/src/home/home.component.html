@@ -1,0 +1,68 @@
+<div style="margin: 20px;width:420px">
+  <div style="text-align: center;">
+  <img src="https://nuviot.blob.core.windows.net/cdn/nuviot-blue.png" alt="Nuviot Logo" style="width: 300px; height: auto; margin-bottom: 20px;" />
+  </div>
+  <div *ngIf="poolState">
+    <div class="stats">
+      <div>
+        <label>Pool Temperature:</label>
+        <span>{{poolState.in}}°</span> 
+      </div>
+      <div>
+        <label>Heated Output:</label>
+        <span> {{poolState.out}}°</span>
+      </div>
+      <div>
+        <label>Heating:</label>
+        <span *ngIf="poolState.heating"><i class="fa fa-check" style="color:green" aria-hidden="true"></i></span>
+        <span *ngIf="!poolState.heating"><i class="fa-regular fa-square-exclamation" style="color:red"></i></span>
+      </div>
+      <div>
+        <label>Low Pressure:</label>
+        <span *ngIf="poolState.lowPressure == 'ok'"><i class="fa fa-check" style="color:green" aria-hidden="true"></i></span>
+        <span *ngIf="poolState.lowPressure == 'warning'"><i class="fa-regular fa-square-exclamation" style="color:red"></i></span>
+      </div>
+      <div>
+        <label>Flow:</label> 
+        <span *ngIf="poolState.flow == 'ok'"><i class="fa fa-check" style="color:green" aria-hidden="true"></i></span>
+        <span *ngIf="poolState.flow == 'warning'"><i class="fa-regular fa-square-exclamation" style="color:red"></i></span>
+      </div>
+      <div>
+        <label>High Pressure:</label> 
+        <span *ngIf="poolState.highPressure == 'ok'"><i class="fa fa-check" style="color:green" aria-hidden="true"></i></span>
+        <span *ngIf="poolState.highPressure == 'warning'"><i class="fa-regular fa-square-exclamation" style="color:red"></i></span>
+      </div>
+      <div>
+        <label>Pool Mode:</label>
+        <span> {{poolState.poolMode}}</span> 
+      </div>
+    </div>
+    <hr />
+      
+    <div class="input-row">
+      <label>Pool Set Point:</label>
+      <div style="display:flex">
+        <input  class="form-control" type="number" [(ngModel)]="poolState.poolSetPoint" />
+        <i class="action fa fa-save save-icon" (click)="setSetPoint('pool', poolState.poolSetPoint)" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="input-row">
+      <label>Spa Set Point:</label>
+      <div style="display:flex">
+        <input  class="form-control" type="number" [(ngModel)]="poolState.spaSetPoint" />
+        <i class="action fa fa-save save-icon" (click)="setSetPoint('spa', poolState.spaSetPoint)" aria-hidden="true"></i>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <div class="function-row">
+        <button class="mode-button btn btn-primary" (click)="setMode('off')">Off</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('pool')">Pool</button>
+        <button class="mode-button btn btn-primary" (click)="setMode('spa')">Spa</button>
+      </div>
+
+    </div>
+    <hr />
+    <h4>Refresh <i class="action fa fa-refresh" (click)="refresh()" aria-hidden="true"></i>  </h4>
+  </div>
+</div>

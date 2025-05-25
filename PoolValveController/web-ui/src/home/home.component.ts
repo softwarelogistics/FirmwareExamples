@@ -17,6 +17,8 @@ interface PoolState {
   spaSetPoint: number;
 }
 
+//ng build --output-hashing none
+
 @Component({
   selector: 'app-home',
   imports: [CommonModule, FormsModule],

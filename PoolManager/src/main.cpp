@@ -16,15 +16,14 @@
 
 #include <uri/UriRegex.h>
 
-#define FIRMWARE_VERSION "3.0.0"
+#define FIRMWARE_VERSION "3.5.3"
 #define HARDWARE_REVISION "5"
 #define FW_SKU "POOL001"
+#define DEFAULT_DEVICE_TYPE_ID "B777D72BE8824809A9919AB0D4EF8684"
 
 #include <PageHandler.h>
-#include "pages.h"
 
 boolean _shouldHeat = false;
-boolean _heaterOn = false;
 
 
 String _lastError = "none";
@@ -42,8 +41,8 @@ WebServer *webServer = new WebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 
-#define homePage  "<!doctype html>\
-<html lang=\"en\" data-beasties-container>\
+String homePage  = "<!doctype html>\
+<html lang=\"en\" >\
 <head>\
   <meta charset=\"utf-8\">\
   <title>PoolMgr</title>\
@@ -55,17 +54,17 @@ WebSocketsServer webSocket = WebSocketsServer(81);
   <script src=\"https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js\" integrity=\"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49\" crossorigin=\"anonymous\"></script>\
   <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\">\
   <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js\" integrity=\"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy\" crossorigin=\"anonymous\"></script>\
-  <link rel=\"stylesheet\" href=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-mgr/styles.css\"></head>\
+  <link rel=\"stylesheet\" href=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/styles.css\"></head>\
   <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\">\
   <link href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap\" rel=\"stylesheet\">\
   <link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\">\
   <script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyCAfoq8E_G7iXNmOlNxxa74OPVKyqBAq18\"></script>\
 <body>\
   <app-root></app-root>\
-  <script src=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-mgr/polyfills.js\" type=\"module\"></script>\
-  <script src=\"https://nuviot.blob.core.windows.net/cdn/sites/pool-mgr/main.js\" type=\"module\"></script>\
+  <script src=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/polyfills.js\" type=\"module\"></script>\
+  <script src=\"https://nuviot.blob.core.windows.net/devicetypeapps/[DEVICETYPEID]/main.js\" type=\"module\"></script>\
 </body>\
-</html>"
+</html>";
 
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
@@ -78,7 +77,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             {
                 IPAddress ip = webSocket.remoteIP(num);
     
-		        webSocket.sendTXT(num, "{\"connect\":true}");
+		        webSocket.sendTXT(num, "{\"connect\":true,\"deviceId\":\"" + sysConfig.DeviceId + 
+                    "\",\"id\":\"" + sysConfig.Id +
+                    "\",\"deviceType\":\"" + sysConfig.DeviceTypeId + 
+                    "\",\"orgId\":\"" + sysConfig.OrgId + 
+                    "\",\"repoId\":\"" + sysConfig.RepoId + 
+                    "\",\"customerId\":\"" + sysConfig.CustomerId + 
+                    "\"}");
                 console.print("client web connected"); 
             }
             break;
@@ -102,7 +107,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 	case WStype_FRAGMENT_FIN:
 	    break;
     }
-
 }
 
 void redirectToSensorPage()
@@ -111,16 +115,9 @@ void redirectToSensorPage()
     webServer->send(302, "text/plain");
 }
 
-void setHeater(boolean isOn)
-{
-    _heaterOn = isOn;
-    state.updateProperty("TrueFalse", "heateron", isOn ? "true" : "false");
-}
-
 void handleTopic(String topic)
 {
 }
-
 
 #define HEATER_MODE_OFF 0
 #define HEATER_MODE_POOL 1
@@ -128,31 +125,34 @@ void handleTopic(String topic)
 
 void setup()
 {
+    initPins();
+    configPins.ConsoleRx = 3;
+    configPins.ConsoleTx = 1;
+ 
     configureFileSystem();
 
-    state.init(FW_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
-
-    configureConsole();
-
     console.setVerboseLogging(false);
-    welcome(FW_SKU, FIRMWARE_VERSION);
-
-    initPins();
-
-    writeConfigPins();
 
     ioConfig.load();
     sysConfig.load();
     sysConfig.Port = 1883;
-    sysConfig.SendUpdateRateMS = 5000;
 
-    // ioConfig.GPIO1Config = GPIO_CONFIG_DBS18;
-    // ioConfig.GPIO1Name = "temperatureIn";
+    if(sysConfig.DeviceTypeId == NULL || sysConfig.DeviceTypeId == "")
+    {
+        sysConfig.DeviceTypeId = DEFAULT_DEVICE_TYPE_ID;
+        sysConfig.write();
+    }   
 
-    // ioConfig.GPIO2Config = GPIO_CONFIG_DBS18;
-    // ioConfig.GPIO2Name = "temperatureOut";
+    configureConsole();
+    welcome(FW_SKU, FIRMWARE_VERSION);
+    state.init(FW_SKU, FIRMWARE_VERSION, HARDWARE_REVISION, "pcl001", 010);
 
-    
+    ioConfig.GPIO1Config = GPIO_CONFIG_DBS18;
+    ioConfig.GPIO1Name = "temperatureIn";
+
+    ioConfig.GPIO2Config = GPIO_CONFIG_DBS18;
+    ioConfig.GPIO2Name = "temperatureOut";
+
     ioConfig.GPIO1Config = GPIO_CONFIG_NONE;
     ioConfig.GPIO1Name = "temperatureIn";
 
@@ -174,6 +174,8 @@ void setup()
     ioConfig.Relay2Enabled = true;
     ioConfig.Relay3Name = "fan";
     ioConfig.Relay3Enabled = true;
+
+    homePage.replace("[DEVICETYPEID]", sysConfig.DeviceTypeId);
 
 
     String btName = "NuvIoT - " + (sysConfig.DeviceId == "" ? "Pool Manager" : sysConfig.DeviceId);
@@ -201,8 +203,9 @@ void setup()
     spaSetPoint = state.getFlt("hottubsetpoint");
     poolSetPoint = state.getFlt("poolsetpoint");
 
-    sysConfig.WiFiSSID = "SLManCave";
     wifiMgr.setup();
+
+    console.println("startupcomplete;");
 }
 
 int idx = 0;
@@ -212,7 +215,7 @@ long nextSend = 0;
 boolean webServerSetup = false;
 
 String getJSONState() {
-    String msg = "{\"heating\":" + String(_shouldHeat) +
+    String msg = "{\"heating\":" + String(_shouldHeat ? "true" : "false") +
                     ",\"poolMode\":" + (poolMode == 0 ? "\"off\"" : poolMode == 1 ? "\"pool\"" : "\"spa\"") +
                     ",\"spaSetPoint\":" + String(spaSetPoint) +
                     ",\"poolSetPoint\":" + String(poolSetPoint) +
@@ -294,9 +297,32 @@ void setupWebServer(){
 void readSensors() {
     temperatureIn = ioValues.getIODoubleValue(0);
     temperatureOut = ioValues.getIODoubleValue(1);
-    hasFlow = ioValues.getIOValue(5) == "0";
-    lowPressure = ioValues.getIOValue(6) == "1";
-    highPressure = ioValues.getIOValue(7) == "1";
+
+    if(hasFlow != (ioValues.getIOValue(5) == "0"))
+    {
+        hasFlow = ioValues.getIOValue(5) == "0";
+        webSocket.broadcastTXT(getJSONState().c_str());
+    }
+    else
+        hasFlow = ioValues.getIOValue(5) == "0";
+     
+ 
+    if(lowPressure != (ioValues.getIOValue(6) == "1"))
+    {
+        lowPressure = ioValues.getIOValue(6) == "1";
+        webSocket.broadcastTXT(getJSONState().c_str());
+    }
+    else
+        lowPressure = ioValues.getIOValue(6) == "1";
+        
+
+    if(highPressure != (ioValues.getIOValue(7) == "1"))
+    {
+        highPressure = ioValues.getIOValue(7) == "1";
+        webSocket.broadcastTXT(getJSONState().c_str());
+    }
+    else 
+        highPressure = ioValues.getIOValue(7) == "1";
 }
 
 void engageHeater() {
@@ -307,19 +333,35 @@ void engageHeater() {
     _lastError = "none";
 
     if(!hasFlow) {
-        _shouldHeat = false;
+        if(_shouldHeat) {
+            _shouldHeat = false;
+            webSocket.broadcastTXT(getJSONState().c_str());
+        }
         _lastError = "noflow";
     }
     else if(poolMode == HEATER_MODE_OFF){
-        _shouldHeat = false;
+        if(_shouldHeat) {
+            _shouldHeat = false;
+            webSocket.broadcastTXT(getJSONState().c_str());
+        }
+
+        
     }
     else {        
         float setPoint = poolMode == HEATER_MODE_POOL ? poolSetPoint : spaSetPoint;
         if(temperatureIn > setPoint + 0.5) {
-            _shouldHeat = false;
+            if(_shouldHeat) {
+              _shouldHeat = false;
+              webSocket.broadcastTXT(getJSONState().c_str());
+            }
+
         }
         else if(temperatureIn < setPoint - 0.5) {
-            _shouldHeat = true;
+            if(!_shouldHeat) {
+              _shouldHeat = true;
+              webSocket.broadcastTXT(getJSONState().c_str());
+            }
+
         }
     }
     
@@ -328,25 +370,17 @@ void engageHeater() {
     relayManager.setRelay(2, _shouldHeat);
 }
 
-void sendUpdate() {
-    String msg = "{'heating':" + String(_shouldHeat) +
-                    ",'poolMode':" + String(poolMode) +
-                    ",'spaSetPoint':" + String(spaSetPoint) +
-                    ",'poolSetPoint':" + String(poolSetPoint) +
-                    ",'in':" + String(temperatureIn) +
-                    ",'out':" + String(temperatureOut) +
-                    ",'lowPressure':" + (lowPressure ? "'ok'" : "'warning'") +
-                    ",'flow':" + (hasFlow ? "'ok'" : "'warning'") +
-                    ",'highpressure':" + (highPressure ? "'ok'" : "'warning'") +
-                    ",'ipaddress':'" + wifiMgr.getIPAddress() + "'" +
-                    ",'err':'" + _lastError + "'}";
-    console.println(msg);
+void sendUpdate(String json) {
 
-    if (wifiMgr.isConnected())
+    if (wifiMQTT.isConnected())
     {
-        wifiMQTT.publish("poolctrlr/poolheater/" + sysConfig.DeviceId, msg);
+        console.println(json);
+        wifiMQTT.publish("poolctrlr/poolheater/" + sysConfig.DeviceId, json);
         wifiMQTT.sendIOValues(&ioValues);
         wifiMQTT.sendRelayStatus(&relayManager);
+    }
+    else {
+        console.println("Not connected to WiFi, unable to send update");
     }
 }
 
@@ -380,6 +414,6 @@ void loop()
         nextSend = millis() + sysConfig.SendUpdateRateMS;
         String json = getJSONState();        
         webSocket.broadcastTXT(json);
-        sendUpdate();
+        sendUpdate(json);
     }
 }

@@ -1,4 +1,3 @@
-NuvIoT-SensorBoard/platformio.ini
-
+node_modules/
 
 Common/set_secrets.h
