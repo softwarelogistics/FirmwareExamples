@@ -44,24 +44,24 @@
     <div class="input-row">
       <label>Source Timing:</label>
       <div style="display:flex">
-        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
-        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+        <input  class="form-control" type="number" [(ngModel)]="sourceTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('source', sourceTiming)" aria-hidden="true"></i>
       </div>
     </div>
 
     <div class="input-row">
       <label>Output Timing:</label>
       <div style="display:flex">
-        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
-        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+        <input  class="form-control" type="number" [(ngModel)]="outputTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('output', outputTiming)" aria-hidden="true"></i>
       </div>
     </div>
 
     <div class="input-row">
       <label>Jets Timing:</label>
       <div style="display:flex">
-        <input  class="form-control" type="number" [(ngModel)]="state.sourceTiming" />
-        <i class="action fa fa-save save-icon" (click)="setTiming('pool', state.sourceTiming)" aria-hidden="true"></i>
+        <input  class="form-control" type="number" [(ngModel)]="jetsTiming" />
+        <i class="action fa fa-save save-icon" (click)="setTiming('jets', jetsTiming)" aria-hidden="true"></i>
       </div>
     </div>
     <hr />

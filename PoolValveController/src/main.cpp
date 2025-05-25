@@ -175,7 +175,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void handleSetTiming(String port, String timing){
   EEPROM.begin(12);
-  uint16_t newTiming = atoi(timing.c_str()) * 1000;
+  uint16_t newTiming = atof(timing.c_str()) * 1000;
 
   if (port == "source"){
     source.setTiming(newTiming);

@@ -50,6 +50,10 @@ throw new Error('Method not implemented.');
 
   ws: WebSocket | undefined;
 
+  outputTiming?: number | undefined;
+  sourceTiming?: number | undefined;
+  jetsTiming?: number | undefined;
+
   state?: State;
   valveState?: ValveState;
   config?: ConnectMessage;
@@ -85,7 +89,6 @@ throw new Error('Method not implemented.');
           break;
         case 'state':
           this.state = JSON.parse(event.data) as State;
-          console.log(this.state);
           break;
         default:
           console.log('Unknown message type');
@@ -100,6 +103,9 @@ throw new Error('Method not implemented.');
 
   async refresh() {
     this.state = await this.http.get(`${environment.apiRoot}/api/state`).toPromise() as State;
+    this.outputTiming = this.state.outputTiming / 1000.0;
+    this.sourceTiming = this.state.sourceTiming / 1000.0;
+    this.jetsTiming = this.state.jetsTiming / 1000.0;
     console.log(this.state);
   }
 
@@ -108,7 +114,7 @@ throw new Error('Method not implemented.');
     console.log(this.state);
   }
   
-  async setTiming(valve: string, timing: number) {
+  async setTiming(valve: string, timing: number | undefined) {
     this.state = await this.http.get(`${environment.apiRoot}/api/timing/${valve}/${timing}`).toPromise() as State;
     console.log(this.state);
   }

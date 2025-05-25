@@ -112,8 +112,7 @@ public:
         m_move90_ms = m_state->getInt((m_name + "ms").c_str());
     }
 
-    void setTiming(uint16_t timing)
-    {
+    void setTiming(uint16_t timing){
         m_move90_ms = timing;
         m_state->registerInt((m_name + "ms").c_str(), 20000);
     }
