@@ -12,6 +12,7 @@
 #include "valve.h"
 #include <WebSocketsServer.h>
 #include <WebServer.h>
+#include <ValveConfig.h>
 
 #define DEFAULT_DEVICE_TYPE_ID "272EC811A9074F8C8CA72D2EAB7D3B44"
 
@@ -36,6 +37,8 @@ WebSocketsServer *webSocket = new WebSocketsServer(81);
 #define FW_SKU "PLVL001"
 #define FIRMWARE_VERSION "0.8.2"
 #define HARDWARE_REVISION "COT-01"
+
+#define CURRENT_STATE_INDEX 0x5432
 
 const char *host = "pool-valves";
 const char *ssid = "CasaDeWolf";
@@ -68,9 +71,12 @@ String homePage  = "<!doctype html>\
 
 // GPIO32, GPIO33, GPIO25, GPIO26, GPIO27, GPIO14, GPIO12 and GPIO13.
 
-Valve jets(&console, &relayManager, &state, &onOffDetector, webSocket, "jets", 0, 1, 0, "spa", "both", "normal");
-Valve source(&console, &relayManager, &state, &onOffDetector, webSocket, "source", 2, 3, 1, "pool", "both", "spa");
-Valve output(&console, &relayManager, &state, &onOffDetector, webSocket, "output", 4, 5, 2, "pool", "both", "spa");
+#define VALVE_COUNT 3
+
+ValvesConfig valveConfig(&console, VALVE_COUNT);
+
+
+Valve *valves[VALVE_COUNT] = {new Valve(), new Valve(), new Valve()};
 
 bool webServerSetup = false;
 
@@ -78,61 +84,73 @@ const int MOTOR_TEMP = A0;
 
 unsigned long next_send = 0;
 
-void handleTopic(String device, String action)
-{
+void handleTopic(String device, String action){
   console.println("Handling topic  " + String(device) + ", " + String(action));
 
-  if (device == "source" && action == "pool")
-    source.setCurrentPosition(currentPosition_0);
-  if (device == "source" && action == "both")
-    source.setCurrentPosition(currentPosition_90);
-  if (device == "source" && action == "spa")
-    source.setCurrentPosition(currentPosition_180);
-  if (device == "source" && action == "reset")
-    source.reset();
+  for(uint8_t i = 0; i < VALVE_COUNT; i++)
+  {
+    console.println("Found valve " + String(valves[i]->getKey()) + " at index " + String(i));
+ 
+    if(valves[i]->getKey() == device){
+      valves[i]->setCurrentPosition(action);
+      return;
+    }
+  }
 
-  if (device == "output" && action == "pool")
-    output.setCurrentPosition(currentPosition_0);
-  if (device == "output" && action == "spa")
-    output.setCurrentPosition(currentPosition_180);
-  if (device == "output" && action == "both")
-    output.setCurrentPosition(currentPosition_90);
-  if (device == "output" && action == "reset")
-    output.reset();
+   console.println("Could not find device  " + String(device));
 
-  if (device == "spa" && action == "normal")
-    jets.setCurrentPosition(currentPosition_180);
-  if (device == "spa" && action == "both")
-    jets.setCurrentPosition(currentPosition_90);
-  if (device == "spa" && action == "jets")
-    jets.setCurrentPosition(currentPosition_0);
-  if (device == "spa" && action == "reset")    
-    jets.reset();
+
+  // if (device == "source" && action == "pool")
+  //   source.setCurrentPosition(currentPosition_0);
+  // if (device == "source" && action == "both")
+  //   source.setCurrentPosition(currentPosition_90);
+  // if (device == "source" && action == "spa")
+  //   source.setCurrentPosition(currentPosition_180);
+  // if (device == "source" && action == "reset")
+  //   source.reset();
+
+  // if (device == "output" && action == "pool")
+  //   output.setCurrentPosition(currentPosition_0);
+  // if (device == "output" && action == "spa")
+  //   output.setCurrentPosition(currentPosition_180);
+  // if (device == "output" && action == "both")
+  //   output.setCurrentPosition(currentPosition_90);
+  // if (device == "output" && action == "reset")
+  //   output.reset();
+
+  // if (device == "spa" && action == "normal")
+  //   jets.setCurrentPosition(currentPosition_180);
+  // if (device == "spa" && action == "both")
+  //   jets.setCurrentPosition(currentPosition_90);
+  // if (device == "spa" && action == "jets")
+  //   jets.setCurrentPosition(currentPosition_0);
+  // if (device == "spa" && action == "reset")    
+  //   jets.reset();
 }
 
 void setMode(String mode) { 
-  if(mode == "pool") {
-    source.setCurrentPosition(currentPosition_0);
-    output.setCurrentPosition(currentPosition_0);
-  }
-  else if(mode == "spa") {
-    source.setCurrentPosition(currentPosition_180);
-    output.setCurrentPosition(currentPosition_180);
-    jets.setCurrentPosition(currentPosition_180);
-  }
-  else if(mode == "poolandspa") {
-    source.setCurrentPosition(currentPosition_180);
-    output.setCurrentPosition(currentPosition_90);
-    jets.setCurrentPosition(currentPosition_180);
-  }
-  else if(mode == "jets") {
-    jets.setCurrentPosition(currentPosition_0);
-  }
-  else if(mode == "calibrate") {
-    source.calibrate();
-    output.calibrate();
-    jets.calibrate();
-  }
+  // if(mode == "pool") {
+  //   source.setCurrentPosition(currentPosition_0);
+  //   output.setCurrentPosition(currentPosition_0);
+  // }
+  // else if(mode == "spa") {
+  //   source.setCurrentPosition(currentPosition_180);
+  //   output.setCurrentPosition(currentPosition_180);
+  //   jets.setCurrentPosition(currentPosition_180);
+  // }
+  // else if(mode == "poolandspa") {
+  //   source.setCurrentPosition(currentPosition_180);
+  //   output.setCurrentPosition(currentPosition_90);
+  //   jets.setCurrentPosition(currentPosition_180);
+  // }
+  // else if(mode == "jets") {
+  //   jets.setCurrentPosition(currentPosition_0);
+  // }
+  // else if(mode == "calibrate") {
+  //   source.calibrate();
+  //   output.calibrate();
+  //   jets.calibrate();
+  // }
 }
 
 void commandHandler(String topic, byte *buffer, size_t len){
@@ -173,41 +191,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 
-void handleSetTiming(String port, String timing){
-  EEPROM.begin(12);
-  uint16_t newTiming = atof(timing.c_str()) * 1000;
-
-  if (port == "source"){
-    source.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t), newTiming);
-  }
-  else if (port == "output"){
-    output.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t) * 2, newTiming);
-  }
-  else if (port == "jets"){
-    jets.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t) * 4, newTiming);
-  }
-  else if(port == "all"){
-    source.setTiming(newTiming);
-    output.setTiming(newTiming);
-    jets.setTiming(newTiming);
-    EEPROM.put(sizeof(uint16_t), newTiming);
-    EEPROM.put(sizeof(uint16_t) * 2, newTiming);
-    EEPROM.put(sizeof(uint16_t) * 4, newTiming);
-  }
-  else{
-    console.println("Invalid port: " + port);
-  }
-
-  EEPROM.end();
-}
-
-
 String getJSONState(){
-    return "{\"messageId\":\"state\",\"ipaddress\":\"" + WiFi.localIP().toString() + "\",\"source\":\"" + source.getStatus() + "\",\"output\":\"" + output.getStatus() + "\",\"spa\":\"" + jets.getStatus() + "\"" + 
-            ",\"sourceTiming\":" + String(source.getTiming()) + ",\"jetsTiming\":" + String(jets.getTiming()) + ",\"outputTiming\":" + String(output.getTiming()) + "}";
+    String json = "{\"messageId\":\"state\"";  
+    for(uint8_t i = 0; i < VALVE_COUNT; i++)
+    {
+        json += ",\"" + valveConfig.getValves()[i].Key + "\":\"" + valves[i]->getStatusKey() + "\"";
+    }
+
+    json += "}";
+    return json;
 } 
 
 void setupWebServer(){
@@ -220,6 +212,9 @@ void setupWebServer(){
         webServer->send(200, "application/json", getJSONState());
     });
 
+    webServer->on("/api/valve/config", HTTP_GET, []() {
+        webServer->send(200, "application/json", valveConfig.toJSON());
+    });
 
     webServer->onNotFound([]() {
         String uri = webServer->uri();
@@ -236,12 +231,27 @@ void setupWebServer(){
             setMode(mode);
             webServer->send(200, "application/json", getJSONState());
         }
-        else if(uri.startsWith("/api/timing")) {
-            String valueStr = uri.substring(strlen("/api/timing/"));
+        else if(uri.startsWith("/api/config/valve")) {
+            String valueStr = uri.substring(strlen("/api/config/valve/"));
             String port = valueStr.substring(0, valueStr.indexOf('/'));
-            String timing = valueStr.substring(valueStr.indexOf('/') + 1);
-            handleSetTiming(port, timing);
-            webServer->send(200, "application/json", getJSONState());
+            String field = valueStr.substring(valueStr.indexOf('/') + 1, valueStr.lastIndexOf('/'));
+            String value = valueStr.substring(valueStr.lastIndexOf('/') + 1);
+            console.println("valuestr: " + valueStr + ";port: " + port + "; field: " + field + "; value: " + value);
+            
+            ValveConfig *config = valveConfig.getValve(port);
+            if(config == NULL){
+                console.println("Valve not found: " + port);
+                webServer->send(404, "application/json", "{\"error\":\"Valve not found\"}");
+                return;
+            } 
+            else {
+              config->writeField(field, value);
+              valveConfig.write();
+              webServer->send(200, "application/json", valveConfig.toJSON());
+     
+            }
+
+           // handleSetTiming(port, timing);
         }
         else{
             webServer->send(200, "text/html", homePage);
@@ -253,36 +263,6 @@ void setupWebServer(){
     webServerSetup = true;
 }
 
-void initTimings() {
-  EEPROM.begin(12);
-  uint16_t initValue;
-
-  EEPROM.get(0, initValue);
-  if(initValue != 0x5432){
-    int defaultValue = 16000;
-    console.println("EEPROM Not set, initialize values");
-    EEPROM.put(0, (uint16_t)0x5432);
-    EEPROM.put(sizeof(uint16_t), defaultValue);
-    EEPROM.put(sizeof(uint16_t) * 2, defaultValue);
-    EEPROM.put(sizeof(uint16_t) * 4, defaultValue);
-  }
-  else {
-    console.println("EEPROM has valid content");
-  }
-
-  uint16_t timing = 0;
-
-  EEPROM.get(sizeof(uint16_t), timing);  
-  source.setTiming(timing);
-
-  EEPROM.get(sizeof(uint16_t) * 2, timing);
-  output.setTiming(timing);
-
-  EEPROM.get(sizeof(uint16_t) * 4, timing);
-  jets.setTiming(timing);
-
-  EEPROM.end();
-}
 
 void setup(void)
 {
@@ -297,6 +277,10 @@ void setup(void)
 
   ioConfig.load();
   sysConfig.load();
+  valveConfig.load();
+
+
+ 
 
   if(sysConfig.DeviceTypeId == NULL || sysConfig.DeviceTypeId == ""){
       sysConfig.DeviceTypeId = DEFAULT_DEVICE_TYPE_ID;
@@ -349,43 +333,43 @@ void setup(void)
   configPins.InvertGpio3 = true;  
   onOffDetector.setup(&ioConfig);
 
-  initTimings();  
-  jets.init();
-  source.init();
-  output.init();
-
   wifiMgr.setup();
+
+ for(uint8_t i = 0; i < VALVE_COUNT; i++){
+    valves[i]->init(&console, &relayManager, webSocket, &valveConfig, i);
+  }
 
   setCommandHandler(commandHandler);
 }
 
 void loop(void){
-  jets.Update();
-  source.Update();
-  output.Update();
-
+  for(uint8_t i = 0; i < VALVE_COUNT; i++)
+  {
+    valves[i]->Update();
+  } 
+  
   relayManager.loop();
   onOffDetector.loop();
 
   commonLoop();
-    if (wifiMgr.isConnected())
-    {
-        if (!webServerSetup)
-        {
-            if(MDNS.begin(sysConfig.DeviceId.c_str()))
-            {
-                console.println("MDNS responder started on " + sysConfig.DeviceId);
-            }
-            else
-            {
-                console.println("Error setting up MDNS responder!");
-            }
-            setupWebServer();
-        }
+  if (wifiMgr.isConnected())
+  {
+      if (!webServerSetup)
+      {
+          if(MDNS.begin(sysConfig.DeviceId.c_str()))
+          {
+              console.println("MDNS responder started on " + sysConfig.DeviceId);
+          }
+          else
+          {
+              console.println("Error setting up MDNS responder!");
+          }
+          setupWebServer();
+      }
 
-        webServer->handleClient();
-        webSocket->loop();
-    }
+      webServer->handleClient();
+      webSocket->loop();
+  }
 
   if (next_send < millis()){
     next_send = millis() + sysConfig.SendUpdateRateMS;
