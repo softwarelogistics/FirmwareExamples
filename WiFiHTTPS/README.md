@@ -50,4 +50,4 @@ pio run -e esp32dev -t upload
 pio device monitor -b 115200
 ```
 
-The PlatformIO environment pins the existing Arduino-ESP32 2.0.6 platform family used by the current DFU examples and consumes the NuvIoT HTTPS client from the NuvIoT library's master branch.
+The PlatformIO environment pins the existing Arduino-ESP32 2.0.6 platform family used by the current DFU examples. NuvIoT is intentionally resolved from the local additional-library directory configured by `lib_extra_dirs = D:\\Arduino\\libraries`; update `D:\\Arduino\\libraries\\nuviot` from GitHub master when you want the latest source. Do not also declare NuvIoT under `lib_deps`, or PlatformIO will compile both the local and downloaded copies.
