@@ -199,7 +199,7 @@ void runHttpsTest(const String &url)
     console.println("[HTTPS] GET " + url);
 
     WiFiHttpsClient secureClient;
-    if (!WiFiHttpsClient::synchronizeClock(NULL, &console))
+    if (!secureClient.synchronizeClock(NULL, &console))
     {
         console.printError("[HTTPS] Device clock is not valid. Request refused.");
         return;
