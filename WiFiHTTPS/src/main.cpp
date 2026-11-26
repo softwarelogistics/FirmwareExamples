@@ -133,7 +133,7 @@ void handleConsoleCommand(String command)
     }
     else if (command == "wifi-reset")
     {
-        WiFi.disconnect();
+        WiFi.disconnect(true, true);
         sysConfig.WiFiSSID = "";
         sysConfig.WiFiPWD = "";
         sysConfig.WiFiEnabled = false;
@@ -141,6 +141,7 @@ void handleConsoleCommand(String command)
         sysConfig.write();
         wifiStarted = false;
         automaticTestQueued = false;
+        httpsRequestPending = false;
         console.println("Saved Wi-Fi credentials cleared.");
         promptForCredentials();
     }
