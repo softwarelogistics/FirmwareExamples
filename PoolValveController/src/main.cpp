@@ -22,21 +22,21 @@ WebSocketsServer *webSocket = new WebSocketsServer(81);
 
 // Programming Interface
 // Back Header
-// 1 - DTR - White
-// 2 - GND - Brown
+// 1 - DTR - YELLOW
+// 2 - GND - WHITE
 // 3 - N/C
-// 4 - From USB - Orange
+// 4 - From USB - GREEN
 // 5 - To USB - Yellow
 // 6 - Red - +V5
 
 // U3
-// 2 - RTS Green
+// 2 - RTS ORANGE
 
 //#include <uri/UriRegex.h>
 
-#define FW_SKU "PLVL001"
-#define FIRMWARE_VERSION "0.8.2"
-#define HARDWARE_REVISION "COT-01"
+#define FW_SKU "PLVL003"
+#define FIRMWARE_VERSION "0.9.5"
+#define HARDWARE_REVISION "COTS-RELAY-8-01"
 
 #define CURRENT_STATE_INDEX 0x5432
 
@@ -226,7 +226,13 @@ void setupWebServer(){
             handleTopic(valve, action);
             webServer->send(200, "application/json", getJSONState());
         }
-        if (uri.startsWith("/api/mode")) {
+        else if (uri.startsWith("/api/config/reset")) {
+            valveConfig.setDefaults();
+            valveConfig.write();
+            webServer->send(200, "application/json", valveConfig.toJSON());
+            hal.restart();
+        }
+        else if (uri.startsWith("/api/mode")) {
             String mode = uri.substring(strlen("/api/mode/"));
             setMode(mode);
             webServer->send(200, "application/json", getJSONState());
@@ -254,6 +260,7 @@ void setupWebServer(){
            // handleSetTiming(port, timing);
         }
         else{
+            homePage.replace("[DEVICETYPEID]", sysConfig.DeviceTypeId);
             webServer->send(200, "text/html", homePage);
         }
     });
@@ -304,7 +311,7 @@ void setup(void)
   ioConfig.Relay1Name = "jet_pwr";
   ioConfig.Relay1Enabled = true;
   ioConfig.Relay2Name = "jet_dir";
-  ioConfig.Relay3Enabled = true;
+  ioConfig.Relay2Enabled = true;
   ioConfig.Relay3Name = "src_pwr";
   ioConfig.Relay3Enabled = true;
   ioConfig.Relay4Name = "src_dir";
@@ -378,7 +385,11 @@ void loop(void){
       String topic = "pool/valvestat/" + String(sysConfig.DeviceId);
       mqttPublish(topic, getJSONState());
     }
-    
+
+    console.setVerboseLogging(true);
+    relayManager.debugPrint();
+    console.setVerboseLogging(false);
+
     webSocket->broadcastTXT(json);
     console.println(json);
   }

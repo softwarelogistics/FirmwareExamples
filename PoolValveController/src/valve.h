@@ -15,6 +15,7 @@ private:
     unsigned long m_finishCount;
     unsigned long m_nextTimeout;
 
+    bool m_isResetting = false;
     bool m_isMoving = false;
 
     RelayManager *m_relayMgr;
@@ -37,15 +38,15 @@ private:
         switch (angle){
             case moveDirection_off:
                 m_console->print("OFF ");
-                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_config->Key + "\",\"state\":\"off\"}");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_config->Key + "\",\"state\":\"" + getStatusKey() + "\"}");
                 break;
             case moveDirection_cw:
                 m_console->print("CW ");
-                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_config->Key + "\",\"state\":\"cw\",\"duration\":" + String(duration) + "}");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"state\":\"moving\",\"valve\":\"" + m_config->Key + "\",\"dir\":\"cw\",\"duration\":" + String(duration) + "}");
                 break;
             case moveDirection_ccw:
                 m_console->print("CCW ");
-                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"valve\":\"" + m_config->Key + "\",\"state\":\"ccw\",\"duration\":" + String(duration) + "}");
+                m_webSocket->broadcastTXT("{\"messageId\":\"valveState\",\"state\":\"moving\",\"valve\":\"" + m_config->Key + "\",\"dir\":\"ccw\",\"duration\":" + String(duration) + "}");
                 break;
         }
 
@@ -93,7 +94,10 @@ public:
 
   
     String getStatusName(){
-        if (m_isMoving){
+        if(m_isResetting){
+            return "Resetting";
+        }
+        else if (m_isMoving){
             return "Moving";
         }
         else{
@@ -109,7 +113,10 @@ public:
     }
 
     String getStatusKey(){
-        if (m_isMoving){
+        if(m_isResetting){
+            return "resetting";
+        }
+        else if (m_isMoving){
             return "moving";
         }
         else{
@@ -128,27 +135,31 @@ public:
     currentPosition_t getCurrentPosition() { return m_config->CurrentState; }
 
     void reset() {
+        m_isResetting = true;
         currentPosition_t lastPosition = m_config->CurrentState;
         m_config->CurrentState = currentPosition_unknown;
         setCurrentPosition(lastPosition);
     }
 
     void calibrate() {
+        m_isResetting = true;
         setValve(moveDirection_ccw, m_config->Timing * 2);
         m_nextPosition = currentPosition_0;
     }
 
     void setCurrentPosition(String nextPosition){
-        if (nextPosition == m_config->Pos0Key)
-        {
+        if(nextPosition == "calibrate"){
+            m_isResetting = true;
+            m_config->CurrentState = currentPosition_unknown;
             setCurrentPosition(currentPosition_0);
         }
-        else if (nextPosition == m_config->Pos90Key)
-        {
+        else if (nextPosition == m_config->Pos0Key){
+            setCurrentPosition(currentPosition_0);
+        }
+        else if (nextPosition == m_config->Pos90Key){
             setCurrentPosition(currentPosition_90);
         }
-        else if (nextPosition == m_config->Pos180Key)
-        {
+        else if (nextPosition == m_config->Pos180Key){
             setCurrentPosition(currentPosition_180);
         }
         else {
@@ -168,6 +179,7 @@ public:
             switch (m_config->CurrentState)
             {
             case currentPosition_unknown:
+                m_isResetting = true;
                 setValve(moveDirection_ccw, m_config->Timing * 2);
                 m_console->println("position was unknown, moving to start.");
                 break;
@@ -224,9 +236,14 @@ public:
         return m_isMoving;
     }
 
+    bool getIsResetting() {
+        return m_isResetting;
+    }
+
     void Update(){
         if (millis() > m_nextTimeout && m_isMoving){
             m_isMoving = false;
+            m_isResetting = false;
             if (m_config->CurrentState == currentPosition_unknown){
                 m_config->CurrentState = currentPosition_0;
                 m_console->println("position was unknown, moved to start.");

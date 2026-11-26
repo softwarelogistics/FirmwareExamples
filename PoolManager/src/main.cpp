@@ -23,6 +23,21 @@
 
 boolean _shouldHeat = false;
 
+int Relay1 = 32;
+int Relay2 = 33;
+int Relay3 = 25;
+int Relay4 = 26;
+
+/*
+ * GPI 1 = Pin 16 Dark Orange 
+ * GPI 2 = Pin 4  Purple
+ * GPI 6 = Pin 34 Yellow
+ * GPI 7 = Pin 35 White
+ * GPI 8 = Pin 32 Faded Orange 
+ */
+
+int StatusLed = 23;
+
 String _lastError = "none";
 double temperatureIn = -1;
 double temperatureOut = -1;
@@ -114,6 +129,18 @@ void setup()
     configPins.ConsoleRx = 3;
     configPins.ConsoleTx = 1;
  
+    configPins.K1Ctl = 32;
+    configPins.K2Ctl = 33;
+    configPins.K1Ctl = 25;
+    configPins.K2Ctl = 26;
+
+    configPins.Gpio1 = 16; // DS18B20 Temperature Sensor Input
+    configPins.Gpio2 = 4; // DS18B20 Temperature Sensor Heatd
+    
+    configPins.Gpio6 = 34; // Low Pressure Switch
+    configPins.Gpio7 = 35; // Flow Switch
+    configPins.Gpio8 = 32; // High Pressure Switch
+
     configureFileSystem();
 
     console.setVerboseLogging(false);
@@ -365,7 +392,7 @@ void sendUpdate(String json) {
         wifiMQTT.sendRelayStatus(&relayManager);
     }
     else {
-        console.println("Not connected to WiFi, unable to send update");
+        console.println("Not connected to WiFi or MQTT, unable to send update");
     }
 }
 

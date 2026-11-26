@@ -80,6 +80,8 @@ class ValveConfig
     }
 
     void writeField(String field, String value) {
+        value.replace("%20", " "); // Decode URL encoding
+        
         if (field == "name") {
             Name = value;
         } else if (field == "key") {
@@ -117,16 +119,14 @@ private:
     ValveConfig *m_valves; // Assuming 3 valves, adjust as needed
     ValveMode *m_modes; // Assuming multiple modes, adjust as needed
 
-    ValvesConfig(Console *pConsole, int valveCount)
-    {
+    ValvesConfig(Console *pConsole, int valveCount){
         m_valveCount = valveCount;
         m_pConsole = pConsole;
         m_valves = new ValveConfig[valveCount]; 
     }
 
 public:    
-    void load()
-    {
+    void load(){
         File file = SPIFFS.open(SYSCONFIG_FN, FILE_READ);
         if (file)
         {
@@ -153,6 +153,7 @@ public:
                 }
                 else
                 {
+
                     m_pConsole->printVerbose("valveconfig=fileread;");
                 }
             }
@@ -166,8 +167,7 @@ public:
     }
 
     ValveConfig* getValve(String valveKey){
-        for(uint8_t i = 0; i < m_valveCount; i++)
-        {
+        for(uint8_t i = 0; i < m_valveCount; i++){
             if(m_valves[i].Key == valveKey)
             {
                 return &m_valves[i];
@@ -184,23 +184,20 @@ public:
     void write()
     {
         File file = SPIFFS.open(SYSCONFIG_FN, FILE_WRITE);
-        if (!file)
-        {
+        if (!file){
             m_pConsole->printError("sysconfig=failwrite; // could not open file or write");
         }
-        else
-        {
+        else {
             String json = toJSON();
+            m_pConsole->println(json);    
             size_t written = file.print(json);
             file.flush();
             file.close();
 
-            if (written != json.length())
-            {
+            if (written != json.length()) {
                 m_pConsole->printError("sysconfig=failwrite; // mismatch write, written: " + String(written) + " size: " + String(json.length()));
             }
-            else
-            {
+            else {
                 m_pConsole->println("sysconfig=writefile; // wrote " + String(written) + " bytes to " + SYSCONFIG_FN);
             }
         }
@@ -214,8 +211,7 @@ public:
         // Example: doc["name"] = Name;
         // Add your serialization logic here
         JsonArray valveArray = doc["valves"].to<JsonArray>();
-        for (int i = 0; i < m_valveCount; i++)
-        {            
+        for (int i = 0; i < m_valveCount; i++) {            
             m_valves[i].addToparent(valveArray);
         }
 
@@ -225,15 +221,14 @@ public:
     }
 
 
-    bool parseJSON(String json)
-    {
+    bool parseJSON(String json) {
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, json);
         JsonArray array= doc["valves"].as<JsonArray>();
 
-        for(int idx = 0; idx < m_valveCount && idx < array.size(); idx++)
-        {
+        for(int idx = 0; idx < m_valveCount && idx < array.size(); idx++) {
             m_valves[idx].parseFromJson(array[idx].as<JsonObject>());
+            m_pConsole->println("valveconfig=valve" + String(idx) + " parsed; state: " + String(m_valves[idx].CurrentState) + "; key: " + m_valves[idx].Key);
         }
 
         return true;
@@ -255,12 +250,12 @@ public:
 
         m_valves[1].Name = "Source";
         m_valves[1].Key = "source";
-        m_valves[1].Pos0Name = "Pool";
-        m_valves[1].Pos0Key = "pool";
+        m_valves[1].Pos0Name = "Spa";
+        m_valves[1].Pos0Key = "spa";
         m_valves[1].Pos90Name = "Pool and Spa";   
         m_valves[1].Pos90Key = "both";
-        m_valves[1].Pos180Name = "Spa";
-        m_valves[1].Pos180Key = "spa";
+        m_valves[1].Pos180Name = "Pool";
+        m_valves[1].Pos180Key = "pool";
         m_valves[1].PowerPin = 2;
         m_valves[1].DirPin = 3;
         m_valves[1].Timing = 20000; // Default timing to 20 seconds
@@ -268,12 +263,12 @@ public:
     
         m_valves[2].Name = "Output";
         m_valves[2].Key = "output";
-        m_valves[2].Pos0Name = "Pool";
-        m_valves[2].Pos0Key = "pool";
+        m_valves[2].Pos0Name = "Spa";
+        m_valves[2].Pos0Key = "spa";        
         m_valves[2].Pos90Name = "Pool and Spa";   
         m_valves[2].Pos90Key = "both";
-        m_valves[2].Pos180Name = "Spa";
-        m_valves[2].Pos180Key = "spa";
+        m_valves[2].Pos180Name = "Pool";
+        m_valves[2].Pos180Key = "pool";
         m_valves[2].PowerPin = 4;
         m_valves[2].DirPin = 5;  
         m_valves[2].Timing = 20000; // Default timing to 20 seconds

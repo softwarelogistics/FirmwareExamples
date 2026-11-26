@@ -1,3 +1,6 @@
 node_modules/
 
 Common/set_secrets.h
+
+.pio/
+*.bin

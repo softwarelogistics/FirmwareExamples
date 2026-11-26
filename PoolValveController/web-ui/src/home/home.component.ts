@@ -45,6 +45,8 @@ interface ValveConfig {
   powerPin: number;
   timing: number;
   currentState: number;
+  currentStateKey: string;
+  currentStateName: string;
 }
 
 interface ValvesConfig {
@@ -96,14 +98,20 @@ throw new Error('Method not implemented.');
       console.log('ws opened')
     };
 
-   
+
     this.ws.onmessage = (event) => {
       let obj = JSON.parse(event.data) as Message;
+
 
       switch(obj.messageId) {
         case 'valveState':
           this.valveState = JSON.parse(event.data) as ValveState;
           console.log(this.valveState);
+            let config = this.valvesConfig?.valves.find(v => v.key === this.valveState?.valve);
+            if(config) {
+              config.currentStateKey = this.valveState.state;
+              this.resovleState(config);
+            }
           break;
         case 'connect':
           this.connectMsg = JSON.parse(event.data) as ConnectMessage;
@@ -111,6 +119,15 @@ throw new Error('Method not implemented.');
           break;
         case 'state':
           this.state = JSON.parse(event.data) as State;
+          for(let name of Object.entries(this.state)) {
+            let key = name[0];
+            let value = name[1];
+            let config = this.valvesConfig?.valves.find(v => v.key === key);
+            if(config) {
+              config.currentStateKey = value;
+              this.resovleState(config);
+            }
+          }
           break;
         default:
           console.log('Unknown message type');
@@ -126,6 +143,29 @@ throw new Error('Method not implemented.');
     await this.getConfig();
   }
 
+  
+    resovleState(config: ValveConfig) {    
+        if(config.currentStateKey == 'resetting') {
+          config.currentStateName = 'Resetting';            
+        }
+        else if(config.currentStateKey == 'moving') {
+          config.currentStateName = 'Moving';
+        }
+        else if(config?.pos0Key == config.currentStateKey) {
+          config.currentStateName = config.pos0Name
+        }
+        else if(config?.pos90Key == config.currentStateKey) {
+          config.currentStateName = config.pos90Name
+        }
+        else if(config?.pos180Key == config.currentStateKey) {
+          config.currentStateName = config.pos180Name
+        }
+        else {
+          config.currentStateName = 'Unknown';
+        }
+    }    
+   
+
   editConfig(valve: ValveConfig) {  
     this.selectedConfig = valve;
     this.originalConfig = JSON.parse(JSON.stringify(valve)); // Deep copy to preserve original state
@@ -136,7 +176,7 @@ throw new Error('Method not implemented.');
   async writeConfig(valveKey: string, valueKey: string, value: string | number) {
     let path = `${environment.apiRoot}/api/config/valve/${valveKey}/${valueKey}/${value}`;
     console.log(`Writing config: ${path}`);
-    await this.http.get(path).toPromise()
+    await this.http.get(path).toPromise() 
    } 
 
   async saveConfig() {
@@ -152,6 +192,21 @@ throw new Error('Method not implemented.');
     this.selectedConfig = undefined;
   }
 
+  getState(valve: ValveConfig): string {
+    if (!this.state) return 'Unknown';
+    switch (valve.currentState) {
+      case 0:
+        return 'Idle';
+      case 1:
+        return 'Active';
+      case 2:
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
+  }
+
+
   cancelConfig() {
     this.selectedConfig = undefined;
   }
@@ -162,6 +217,27 @@ throw new Error('Method not implemented.');
 
   async getConfig() {
     this.valvesConfig = await this.http.get(`${environment.apiRoot}/api/valve/config`).toPromise() as ValvesConfig;
+    for(let valve of this.valvesConfig.valves) {
+      if(valve.currentState == 0) {
+        valve.currentStateKey = valve.pos0Key;
+        valve.currentStateName = valve.pos0Name;
+      }
+      else if(valve.currentState == 1) {
+        valve.currentStateKey = valve.pos90Key;
+        valve.currentStateName = valve.pos90Name;
+      }
+      else if(valve.currentState == 2) {
+        valve.currentStateKey = valve.pos180Key;
+        valve.currentStateName = valve.pos180Name;
+      }
+      else {
+        valve.currentStateKey = 'unknown';
+        valve.currentStateName = 'Unknown';
+      }
+      this.resovleState(valve);
+      valve.timing = valve.timing / 1000.0; // Convert to seconds for display
+    }
+
     console.log(this.valvesConfig);
   }
 
