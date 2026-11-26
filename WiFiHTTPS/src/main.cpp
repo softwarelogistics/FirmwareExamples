@@ -40,7 +40,7 @@ void promptForCredentials()
     if (credentialInput == CredentialInput::Ssid)
         console.println("First-run setup: enter Wi-Fi SSID:");
     else
-        console.println("Enter Wi-Fi password (input is hidden):");
+        console.println("Enter Wi-Fi password (input is hidden; type open for an open network):");
 }
 
 void startWiFi()
@@ -86,19 +86,13 @@ void handleConsoleCommand(String command)
         sysConfig.WiFiSSID = command;
         credentialInput = CredentialInput::Password;
         console.setEchoInput(false);
-        console.println("Enter Wi-Fi password (input is hidden):");
+        console.println("Enter Wi-Fi password (input is hidden; type open for an open network):");
         return;
     }
 
     if (credentialInput == CredentialInput::Password)
     {
-        if (command.length() == 0)
-        {
-            console.println("Password cannot be empty. Enter Wi-Fi password:");
-            return;
-        }
-
-        sysConfig.WiFiPWD = command;
+        sysConfig.WiFiPWD = command == "open" ? "" : command;
         credentialInput = CredentialInput::None;
         console.setEchoInput(true);
         credentialsPendingSave = true;
@@ -164,7 +158,29 @@ void saveCredentialsAndConnect()
     sysConfig.Commissioned = true;
     sysConfig.write();
 
-    console.println("Wi-Fi credentials saved using SysConfig (SPIFFS).");
+    File file = SPIFFS.open(SYSCONFIG_FN, FILE_READ);
+    bool saved = false;
+    if (file)
+    {
+        const String json = file.readString();
+        file.close();
+
+        SysConfig verification(&console);
+        saved = verification.parseJSON(json) &&
+            verification.WiFiSSID == sysConfig.WiFiSSID &&
+            verification.WiFiPWD == sysConfig.WiFiPWD;
+    }
+
+    if (!saved)
+    {
+        console.printError("Could not verify Wi-Fi credentials in SysConfig. Please enter them again.");
+        sysConfig.WiFiSSID = "";
+        sysConfig.WiFiPWD = "";
+        promptForCredentials();
+        return;
+    }
+
+    console.println("Wi-Fi credentials saved and verified using SysConfig (SPIFFS).");
     startWiFi();
 }
 
@@ -240,7 +256,9 @@ void setup()
 
     sysConfig.load();
 
-    if (sysConfig.WiFiSSID.length() == 0 || sysConfig.WiFiPWD.length() == 0)
+    const bool credentialsAvailable = sysConfig.WiFiSSID.length() > 0 &&
+        (sysConfig.WiFiPWD.length() > 0 || sysConfig.WiFiEnabled);
+    if (!credentialsAvailable)
     {
         promptForCredentials();
         return;
@@ -270,7 +288,8 @@ void loop()
     if (wifiStarted && WiFi.status() != WL_CONNECTED && millis() >= nextWifiStatus)
     {
         console.println("Waiting for Wi-Fi. Status: " + String(static_cast<int>(WiFi.status())));
-        nextWifiStatus = millis() + 5000;
+        WiFi.reconnect();
+        nextWifiStatus = millis() + 10000;
     }
 
     if (httpsRequestPending)
