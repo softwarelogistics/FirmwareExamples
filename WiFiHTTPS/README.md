@@ -11,7 +11,7 @@ A small ESP32 PlatformIO project for exercising the NuvIoT library's trusted Wi-
 5. Credentials are saved through the existing `SysConfig` SPIFFS persistence. Subsequent boots reuse them.
 6. Once Wi-Fi connects, the example automatically requests `https://example.com/`.
 
-At startup the console prints `LIB-VERSION` and `HTTPS-CA-BUNDLE` (the number of certificates in the ESP-IDF embedded bundle). The library version must report `5.3` for the bundle-initialization diagnostics in the current master source.
+At startup the console prints `LIB-VERSION` and `HTTPS-CA-BUNDLE` (the number of certificates in the ESP-IDF embedded bundle). The library version must report `5.3.1` for the bundle-initialization diagnostics in the current master source.
 
 The example uses the existing SysConfig storage format. It does not introduce a second EEPROM store. SysConfig currently persists its JSON configuration in SPIFFS; credentials are not encrypted at rest by this example. An empty password is treated as an open network only when Wi-Fi is already marked enabled in SysConfig.
 
