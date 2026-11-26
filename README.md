@@ -47,6 +47,11 @@ Examples of how to use different drivers for Software Logistics Open Hardware Pl
 
 ## Summary of Examples, a work in progress!
 
+* ### Wi-Fi HTTPS Test Bench
+  * First-run Wi-Fi credential setup using NuvIoT SysConfig and serial console input.
+  * Trusted ESP32 HTTPS tests, including certificate and hostname failure cases.
+  * [Open the WiFiHTTPS example](WiFiHTTPS/README.md)
+
 * ### NuvIot Sensor
   * A simple monitor of temperature and humidity
   * https://github.com/softwarelogistics/FirmwareExamples/tree/main/NuvIoT-SensorBoard
