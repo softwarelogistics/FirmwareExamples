@@ -6,6 +6,7 @@
 #include <Console.h>
 #include <SysConfig.h>
 #include <WiFiHttpsClient.h>
+#include <NuvIoTVersion.h>
 
 #define EXAMPLE_SKU "WIFI_HTTPS"
 #define FIRMWARE_VERSION "1.0.0"
@@ -247,6 +248,8 @@ void setup()
     console.println("");
     console.println("NuvIoT Wi-Fi HTTPS Test Bench");
     console.println("Firmware: " FIRMWARE_VERSION);
+    console.println("LIB-VERSION: " NUVIOT_LIBRARY_VERSION);
+    console.println("HTTPS-CA-BUNDLE: " + String(WiFiHttpsClient::getEmbeddedBundleCertificateCount()) + " certificates");
 
     if (!SPIFFS.begin(true))
     {
